@@ -3277,6 +3277,12 @@ var words = {
             if(!translated) return;
             mutations.forEach(mutation => {
                 var elem = mutation.target;
+                if(elem.id === 'battle_main'){
+                    //监听到战斗页面刷新，重新翻译内容及重新监听动态内容
+                    observer.disconnect();
+                    translateAllText();
+                    return;
+                }
                 if(elem.style.visibility!='hidden') {
                     translateText(elem, dynamicDict.get(elem), true);
                     translateButtons(elem, dynamicDict.get(elem), true);
@@ -3299,6 +3305,7 @@ var words = {
                 dynamicDict.set(elem, dict); //存储字典以备动态翻译使用
                 observer.observe(elem, {childList:true, attribute: true, attributeFilter: ['value', 'title']}); //监听翻译动态内容
             }
+            observer.observe(document.body.querySelector('#battle_main'), {childList:true, attribute: true, attributeFilter: ['value', 'title']}); //监听战斗页面刷新
         }
     }
 
