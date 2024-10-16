@@ -9,8 +9,8 @@
 // @include      *://alt.hentaiverse.org/*
 // @grant        GM_addStyle
 // @grant        unsafeWindow
-// @downloadURL https://github.com/WayneFerdon/UserScripts/HVTranslate/raw/refs/heads/master/HentaiVerse/HVBattleChineseTranslate.user.js
-// @updateURL https://github.com/WayneFerdon/UserScripts/HVTranslate/raw/refs/heads/master/HentaiVerse/HVBattleChineseTranslate.user.js
+// @downloadURL https://github.com/WayneFerdon/UserScripts/raw/refs/heads/master/HVTranslate/HVBattleTranslate.user.js
+// @updateURL https://github.com/WayneFerdon/UserScripts/raw/refs/heads/master/HVTranslate/HVBattleTranslate.user.js
 // ==/UserScript==
 
 // 隐藏原先的战斗 log
