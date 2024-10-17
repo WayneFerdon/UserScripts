@@ -704,13 +704,7 @@ function add_to_log(text) {
 }
 
 function handle_log(mutations, _observer) {
-  monsterNames = []
-  gE('div.btm3>div>div', 'all').forEach((monster, i) => {
-    monsterNames.push(monster.innerHTML);
-      if (monsterTrans[monster.innerHTML]) {
-        monster.innerHTML = monsterTrans[monster.innerHTML]
-      }
-  })
+  translateMonsterNames();
 
   for (const mutation of mutations) {
     if (mutation.type !== 'childList') {
@@ -726,6 +720,16 @@ function handle_log(mutations, _observer) {
       // console.log(trans(node.textContent));
     }
   }
+}
+
+function translateMonsterNames() { 
+  monsterNames = []
+  gE('div.btm3>div>div', 'all').forEach((monster, i) => {
+    monsterNames.push(monster.innerHTML);
+    if (monsterTrans[monster.innerHTML]) {
+      monster.innerHTML = monsterTrans[monster.innerHTML]
+    }
+  })
 }
 
 function gE(ele, mode, parent) { // 获取元素
@@ -760,7 +764,8 @@ function start_observe() {
   for (const text of texts.reverse()) {
     add_to_log(text);
   }
-
+  translateMonsterNames();
+  
   return observe_node(document.querySelector('#textlog').firstChild, {childList: true}, handle_log);
 }
 
