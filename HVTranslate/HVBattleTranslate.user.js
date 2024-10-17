@@ -733,16 +733,17 @@ function gE(ele, mode, parent) { // 获取元素
 }
 
 function start_observe() {
-  if (document.getElementById('translog')) return;
-  // 在原日志的后面增加一个新的元素存放翻译后的日志，避免对其他插件造成可能存在的干扰
-
+  monsterNames = []
   gE('div.btm3>div>div', 'all').forEach((monster, i) => {
-      monsterNames.push(monster.innerHTML);
-      if (monsterTrans[monster.innerHTML]) {
-          monster.innerHTML = monsterTrans[monster.innerHTML]
-      }
+    monsterNames.push(monster.innerHTML);
+    if (monsterTrans[monster.innerHTML]) {
+      monster.innerHTML = monsterTrans[monster.innerHTML]
+    }
   })
+    
+  if (document.getElementById('translog')) return;
 
+  // 在原日志的后面增加一个新的元素存放翻译后的日志，避免对其他插件造成可能存在的干扰
   let table = document.createElement('table');
   let tbody = document.createElement('tbody');
   table.id = 'translog';
