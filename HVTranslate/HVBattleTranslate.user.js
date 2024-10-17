@@ -621,6 +621,16 @@ let items_words = { //以下内容来自HV装备物品汉化
 let regexs = [], chinese = [];
 
 let monsterNames = [];
+let monsterTrans = {
+  'Konata': '泉此方',
+  'Mikuru Asahina': '朝比奈实玖瑠',
+  'Ryouko Asakura': '朝仓凉子',
+  'Yuki Nagato': '长门有希',
+  'Real Life': '现实生活',
+  'Invisible Pink Unicorn': '隐形粉红独角兽',
+  'Flying Spaghetti Monster': '飞行意大利面怪物',
+  'Triple Trio and the Tree': '大树十重奏'
+}
 
 for (const [key, value] of Object.entries(words)) {
   regexs.push(new RegExp(`(?<=[ ,.\\[]|^)${key}(?=[ ,.\\]]|$)`, 'g'));
@@ -655,8 +665,12 @@ function trans(text) {
     text = text.replace(regex, chinese[idx]);
   }
 
-  for(let i in monsterNames){
-    text = text.replace(`[MONSTER_${i}]`, `<span style="color:orange">[${monsterNames[i]}]</span>`); // 恢复怪物名称
+  for (let i in monsterNames) {
+    if(monsterTrans[monsterNames[i]]) {
+      text = text.replace(`[MONSTER_${i}]`, `<span style="color:orange">[${monsterTrans[monsterNames[i]]}]</span>`); // 恢复怪物名称
+    } else {
+      text = text.replace(`[MONSTER_${i}]`, `<span style="color:orange">[${monsterNames[i]}]</span>`); // 恢复怪物名称
+    }
   }
   return text;
 }
@@ -724,6 +738,9 @@ function start_observe() {
 
   gE('div.btm3>div>div', 'all').forEach((monster, i) => {
       monsterNames.push(monster.innerHTML);
+      if (monsterTrans[monster.innerHTML]) {
+          monster.innerHTML = monsterTrans[monster.innerHTML]
+      }
   })
 
   let table = document.createElement('table');
