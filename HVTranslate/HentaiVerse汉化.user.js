@@ -14,8 +14,9 @@
 // @include        *://hentaiverse.org/*
 // @include        *://alt.hentaiverse.org/*
 // @core           http://userscripts-mirror.org/scripts/show/41369
-// @version        2024.11.01
+// @version        2024.11.01.a
 // @grant none
+// @run-at         document-end
 // ==/UserScript==
 (function () {
     'use strict';
@@ -26,22 +27,22 @@
     //注意使用到的字典顺序，互相包含的分区或者一个分区使用多个字典前面的翻译可能会影响后面的结果
     var dictsMap = {
         // 除了本字典分区里指定的部分之外，正文字典里另有alerts(浏览器弹窗)特殊部分使用独立方法翻译且所有页面生效
-        '#messagebox' : ['messagebox', 'items', 'equipsName', 'equipsInfo'], //HV内的系统消息浮窗，所有页面的系统信息提示翻译均在这部分
-        '#messagebox_outer' : ['messagebox', 'items', 'equipsName', 'equipsInfo'], //HV内的系统消息浮窗，所有页面的系统信息提示翻译均在这部分
+        '#messagebox' : ['messagebox', 'items', 'equipsInfo', 'equipsName'], //HV内的系统消息浮窗，所有页面的系统信息提示翻译均在这部分
+        '#messagebox_outer' : ['messagebox', 'items', 'equipsInfo', 'equipsName'], //HV内的系统消息浮窗，所有页面的系统信息提示翻译均在这部分
         'body>script[src$="hvc.js"]+div[style]:not([id])' : ['login'], //登陆页面，因为没有ID特征比较难搞
         '#navbar' : ['menu', 'difficulty'], //主菜单导航栏，使用菜单字典和难度名字典
-        '#eqch_left' : ['character', 'equipsName', 'equipsPart'], //主界面和切换装备页左侧栏，使用主界面字典和装备字典
+        '#eqch_left' : ['character', 'equipsPart', 'equipsName'], //主界面和切换装备页左侧栏，使用主界面字典和装备字典
         '#compare_pane' : ['equipsInfo'], //切换装备页面的装备对比悬浮窗，使用装备信息字典。
         '#eqch_stats' : ['characterStatus'], //主界面右侧状态栏
         '#ability_outer' : ['ability'], //技能页面，使用技能名称字典
         '#ability_info' : ['skills', 'abilityInfo', 'ability', 'items'], //技能悬浮窗，需监听动态翻译
         '#train_outer' : ['trains'], //训练
-        '#popup_box' : ['itemInfos', 'items', 'artifact', 'equipsName', 'equipsInfo'], //物品和装备悬浮窗，需要监听动态翻译
+        '#popup_box' : ['itemInfos', 'items', 'artifact', 'equipsInfo', 'equipsPart'],//, 'equipsInfo', 'equipsName'], //物品和装备悬浮窗，需要监听动态翻译
         '#filterbar' : ['filters'], //装备、物品列表的类型筛选栏
         '#item_outer' : ['items', 'artifact'], //物品仓库
-        '#eqinv_outer' : ['equipsName'], //装备仓库
+        // '#eqinv_outer' : ['equipsPart', 'equipsName'], //装备仓库
         '#itshop_outer' : ['items', 'artifact'], //物品商店
-        '#eqshop_outer' : ['equipsName'], //装备商店
+        // '#eqshop_outer' : ['equipsPart', 'equipsName'], //装备商店
         '#itembot_outer' : ['itemBot', 'items', 'artifact'], //采购机器人
         '#bocreate' : ['itemBot'], //采购机器人
         '#market_right' : ['items', 'artifact'], //市场列表
@@ -66,7 +67,7 @@
         '#forge_outer>#rightpane' : ['upgrades', 'items', 'equipsInfo'], //装备强化的右侧栏，包含强化、物品、装备信息
         '#forge_cost_div' : ['upgrades', 'items'], //装备修复、拆解、魂绑、重铸右侧的动态提示文本，需要监听动态翻译
         '#equip_extended' : ['equipsInfo'], //强化、装备独立信息页的装备信息
-        '#showequip' : ['equipsName', 'equipsSuffix'], //独立装备信息页，装备信息已经由上面翻译只需要翻译装备名和装备后缀补充
+        // '#showequip' : ['equipsName', 'equipsSuffix'], //独立装备信息页，装备信息已经由上面翻译只需要翻译装备名和装备后缀补充
         '#arena_list' : ['battle', 'difficulty'], //AR/ROB战斗列表
         '#arena_tokens' : ['battle'], //ROB的底部令牌提示
         '#towerstart' : ['battle', 'difficulty'], //TW战斗模式入场提示
@@ -78,9 +79,9 @@
         //战斗页面的翻译元素，即使已经写了字典脚本默认也不会翻译战斗页面，需要双击战斗下方经验条开启
         '#infopane' : ['battling', 'skills'], //战斗提示信息面板
         //以下几个面板翻译会和Monsterbation冲突，且切换翻译需要刷新页面才会生效
-        //'#table_skills' : ['skills'], //战斗技能面板
-        //'#table_magic' : ['skills'], //战斗法术面板
-        //'#pane_item' : ['battling'], //战斗物品面板
+        '#table_skills' : ['skills'], //战斗技能面板
+        '#table_magic' : ['skills'], //战斗法术面板
+        '#pane_item' : ['battling'], //战斗物品面板
     };
 
     //需要监听动态翻译的元素列表，除非有新的动态元素否则不需要更改
@@ -482,11 +483,11 @@ var words = {
         'Heavy armor' : '重甲',
         'Magic proficiency' : '法杖/魔法熟练度',
         '/^Staff$/' : '法杖',
-        '/^Elemental$/' : '元素魔法',
-        '/^Divine$/' : '神圣魔法',
-        '/^Forbidden$/' : '黑暗魔法',
-        '/^Supportive$/' : '增益魔法',
-        '/^Deprecating$/' : '减益魔法',
+        '/^Elemental$/' : '元素',
+        '/^Divine$/' : '神授（神圣）',
+        '/^Forbidden$/' : '禁忌（黑暗）',
+        '/^Supportive$/' : '辅助（增益）',
+        '/^Deprecating$/' : '衰折（减益）',
     ///////////////////////////////////////////////////////切换装备页面
         'Equipment Slots' : '套装切换',
         'Main Hand' : '主手',
@@ -580,11 +581,11 @@ var words = {
         'cloth armor' : '布甲',
         'light armor' : '轻甲',
         'heavy armor' : '重甲',
-        'elemental' : '元素魔法',
-        'divine' : '神圣魔法',
-        'forbidden' : '黑暗魔法',
-        'deprecating' : '减益魔法',
-        'supportive' : '增益魔法',
+        'elemental' : '元素',
+        'divine' : '神授（神圣）',
+        'forbidden' : '禁忌（黑暗）',
+        'deprecating' : '衰折（减益）',
+        'supportive' : '辅助（增益）',
     },
 
 
@@ -713,7 +714,7 @@ var words = {
         'Better Absorb' : '强力吸收',
         'Stronger Spirit' : '强力灵能力',
         'Better Heartseeker' : '强力穿心',
-        'Better Arcane Focus' : '强力奥数集成',
+        'Better Arcane Focus' : '强力奥术集中',
         'Better Regen' : '强力细胞活化',
         'Better Cure' : '强力治疗',
         'Better Spark' : '强力生命火花',
@@ -885,7 +886,7 @@ var words = {
         'Increases the chance that Absorb will successfully nullify a hostile spell.' : '增加“吸收”成功使敌方咒语无效的机率。',
         'Decreases the amount of damage required to make Spirit Shield kick in, as well as how much spirit is consumed when it does.' : '降低触动“灵力盾”所需的伤害值，同时也减少灵力值的损失。	',
         'Heartseeker will additionally increase the damage of any critical melee hits.' : '“穿心”会额外增加任何近战暴击的伤害。',
-        'Arcane Focus will additionally increase the damage of any critical spell hits.' : '“奥术集成”会额外增加任何咒语暴击的伤害。	',
+        'Arcane Focus will additionally increase the damage of any critical spell hits.' : '“奥术集中”会额外增加任何咒语暴击的伤害。	',
         'Increase the power and duration of the Regen spell.' : '增加“细胞活化”咒语的效果和持续回合数。	',
         'Increase the healing power and decrease the cooldown of the Cure spell.' : '增加“疗伤”咒语的治疗效果和缩短冷却时间。	',
         'Increase the duration and decrease the mana cost of the Spark of Life spell.' : '增加“生命火花”咒语的持续回合数并且减少施放所需魔力值。	',
@@ -927,7 +928,7 @@ var words = {
         'Decreases cooldown and increases the maximum number of targets hit by the Corruption spell.' : '缩短冷却时间并且增加“腐败”咒语的最大目标命中数。	',
         'Decreases cooldown and increases the maximum number of targets hit by the Disintegrate spell.' : '缩短冷却时间并且增加“瓦解”咒语的最大目标命中数。	',
         'Decreases cooldown and increases the maximum number of targets hit by the Ragnarok spell.' : '缩短冷却时间并且增加“诸神黄昏”咒语的最大目标命中数。	',
-        'Augments your forbidden spells with the Ripened Soul proc, which damages the target over time and enables certain follow-up attacks. Higher levels increase the chance of the proc occurring.' : '扩充你的黑暗咒语能力，附加鲜美的灵魂状态，给予持续伤害且能对目标使用某些后续攻击。高等级增加状态触发率。',
+        'Augments your forbidden spells with the Ripened Soul proc, which damages the target over time and enables certain follow-up attacks. Higher levels increase the chance of the proc occurring.' : '扩充你的禁忌咒语能力，附加鲜美的灵魂状态，给予持续伤害且能对目标使用某些后续攻击。高等级增加状态触发率。',
         'Added effect: Ripened Soul' : '附加效果：鲜美的灵魂',
         'Chance)' : '几率)',
         'Imperil additionally reduces specific mitigation against Dark.' : '让“陷危”咒语附加降低暗属性缓伤的能力。	',
@@ -1005,7 +1006,7 @@ var words = {
         '/^Shadow Veil$/' : '影纱[S]',
         '/^Absorb$/' : '吸收[S]',
         '/^Spark of Life$/' : '生命火花[S]',
-        '/^Arcane Focus$/' : '奥术集成[S]',
+        '/^Arcane Focus$/' : '奥术集中[S]',
         '/^Heartseeker$/' : '穿心[S]',
         '/^Spirit Shield$/' : '灵力盾[S]',
     },
@@ -1044,13 +1045,13 @@ var words = {
 
         'Health Potion' : '体力药水',
         'Health Draught' : '体力长效药',
-        'Health Elixir' : '终极体力药',
+        'Health Elixir' : '体力秘药',
         'Mana Potion' : '法力药水',
         'Mana Draught' : '法力长效药',
-        'Mana Elixir' : '终极法力药',
+        'Mana Elixir' : '法力秘药',
         'Spirit Potion' : '灵力药水',
         'Spirit Draught' : '灵力长效药',
-        'Spirit Elixir' : '终极灵力药',
+        'Spirit Elixir' : '灵力秘药',
         'Last Elixir' : '终极秘药',
         'Energy Drink' : '能量饮料',
         'Caffeinated Candy' : '咖啡因糖果',
@@ -1070,8 +1071,8 @@ var words = {
         'Scroll of Shadows' : '幻影卷轴',
         'Scroll of Absorption' : '吸收卷轴',
         'Scroll of Life' : '生命卷轴',
-        'Scroll of Protection' : '保护卷轴',
-        'Scroll of the Gods' : '神之卷轴',
+        'Scroll of Protection' : '守护卷轴',
+        'Scroll of the Gods' : '众神卷轴',
 
         'Crystal of Vigor' : '力量水晶',
         'Crystal of Finesse' : '灵巧水晶',
@@ -1139,7 +1140,7 @@ var words = {
         'Wispy Catalyst' : '纤小 催化剂',
         'Diluted Catalyst' : '稀释 催化剂',
         'Regular Catalyst' : '平凡 催化剂',
-        'Robust Catalyst' : '充沛 催化剂',
+        'Robust Catalyst' : '稳健 催化剂',
         'Vibrant Catalyst' : '活力 催化剂',
         'Coruscating Catalyst' : '闪耀 催化剂',
 
@@ -1446,8 +1447,9 @@ var words = {
         'You gain +25% resistance to Holy elemental attacks and do 25% more damage with Holy magicks.' : '你获得 +25% 的神圣魔法耐性且获得 25% 的额外神圣魔法伤害。',
         'You gain +25% resistance to Dark elemental attacks and do 25% more damage with Dark magicks.' : '你获得 +25% 的黑暗魔法耐性且获得 25% 的额外黑暗魔法伤害。',
         'Grants the Haste effect.' : '使用产生加速效果。',
-        'Grants the Protection effect.' : '使用产生保护效果。',
-        'Grants the Haste and Protection effects with twice the normal duration.' : '产生加速和保护的效果。两倍持续时间',
+        'Grants the Protection effect.' : '使用产生守护效果。',
+        'Grants 守护(物防) effect.' : '使用产生守护效果。',
+      'Grants the Haste and Protection effects with twice the normal duration.' : '产生加速和守护的效果。两倍持续时间',
         'Grants the Absorb effect.' : '使用后获得吸收效果。',
         'Grants the Shadow Veil effect.' : '使用产生闪避效果。',
         'Grants the Spark of Life effect.' : '使用产生生命火花效果。',
@@ -1532,7 +1534,7 @@ var words = {
         'Given to you by Ryouko when you defeated her. You decided to name it Achakura, for no particular reason.' : '击败朝仓凉子后获得的人形。你决定取名叫朝仓，这没什么特别的理由。',
         'Given to you by Yuki when you defeated her. She looked better without them anyway.' : '击败长门有希后获得的眼镜。她不戴眼镜时看起来好多了。',
         'An Invisible Pink Unicorn Horn taken from the Invisible Pink Unicorn. It doesn\'t weigh anything and has the consistency of air, but you\'re quite sure it\'s real.' : '从隐形粉红独角兽头上取下来的隐形粉红色的角，它很像空气一样轻，几乎没有重量，但是你很确定它是真实存在的',
-        'A nutritious pasta-based appendage from the Flying Spaghetti Monster.' : '一条用飞行意大利面怪物身上的面团做成的营养附肢。',
+        'A nutritious pasta-based appendage from the Flying Spaghetti Monster.' : '一条用飞天意面怪身上的面团做成的营养附肢。',
         'A voucher for a free soulbound Peerless equipment piece of your choice. Given to you personally by Snowflake for your devout worship and continued offerings.' : '一张可以根据你的选择兑换一件免费灵魂绑定无双装备的凭证。由雪花女神亲自交给你的虔诚崇拜和持续献祭奖励。',
 
         //小马
@@ -1704,7 +1706,7 @@ var words = {
         'Storage Slots' : '仓库库存',
         'Current Owner' : '持有者',
 
-        //装备品质
+        ////////////////////////品质////////////////////////
         'Flimsy' : '薄弱',
         'Crude' : '劣等',
         'Fair' : '一般',
@@ -1715,93 +1717,138 @@ var words = {
         'Magnificent' : '☆史诗☆',
         'Legendary' : '✪传奇✪',
         'Peerless' : '☯无双☯',
-
-        //法杖类型
+        ////////////////////////种类////////////////////////
+        // 单手
+        'Dagger' : '*匕首(单)',
+        'Sword Chucks' : '*锁链双剑(单)',
+        'Shortsword' : '短剑(单)',
+        'Wakizashi' : '脇差(单)',
+        'Axe' : '斧(单)',
+        'Club' : '棍(单)',
+        'Rapier' : '西洋剑(单)',
+        // 双手武器
+        'Scythe' : '*镰刀(双)',
+        'Longsword' : '长剑(双)',
+        'Katana' : '太刀(双)',
+        'Mace' : '重槌(双)',
+        'Estoc' : '刺剑(双)',
+        // 法杖
         ' Staff' : ' 法杖',
+        ////////////////////////材质////////////////////////
+        // 法杖
         'Oak' : '橡木',
         'Redwood' : '红杉木',
         'Willow' : '柳木',
         'Katalox' : '铁木',
-        'Ebony':'*乌木',
-        //单手武器
-        'Axe' : '斧',
-        'Club' : '棍',
-        'Rapier' : '西洋剑',
-        'Shortsword' : '短剑',
-        'Wakizashi' : '脇差',
-        'Sword Chucks' : '*锁链双剑',
-        'Dagger' : '*匕首',
-        //双手武器
-        'Mace' : '重锤',
-        'Estoc' : '刺剑',
-        'Longsword' : '长剑',
-        'Katana' : '日本刀',
-        'Scythe' : '*镰刀',
-        //盾类型
+        // 盾
         'Buckler' : '小圆盾',
         'Kite Shield' : '鸢盾',
         'Force Shield' : '力场盾',
-        'Tower Shield' : '*塔盾',
-        //护甲类型
+        // 防具
         'Cotton' : '棉制',
         'Phase' : '相位',
         'Shade' : '暗影',
         'Leather' : '皮革',
         'Plate' : '板甲',
-        'Power ': '动力 ',
-        //旧版护甲类型
+        'Power' : '动力',
+        // 旧版
+        'Ebony' : '*乌木',
+        'Tower Shield' : '*塔盾',
         'Silk' : '*丝绸',
         'Gossamer' : '*薄纱',
         'Dragon Hide' : '*龙皮',
         'Kevlar' : '*凯夫拉',
         'Chainmail' : '*锁子甲',
-        //锁子甲特有部位
+        ////////////////////////部位////////////////////////
+        // 布甲
+        'Cap ' : '兜帽 ',
+        '/Cap$/' : '兜帽 ',
+        'Robe' : '长袍',
+        'Gloves' : '手套',
+        'Pants' : '短裤',
+        'Shoes' : '鞋',
+        // 轻甲/重甲
+        'Helmet' : '头盔',
+        'Gauntlets' : '手甲',
+        'Boots' : '靴子',
+        // 轻甲
+        'Breastplate' : '护胸',
+        'Leggings' : '护腿',
+        // 板甲
+        'Cuirass' : '胸甲',
+        'Greaves' : '护胫',
+        // 动力
+        'Armor' : '盔甲',
+        'Sabatons' : '铁靴',
+        // 旧版锁子甲
         'Coif' : '头巾',
         'Mitons' : '护手',
         'Hauberk' : '装甲',
         'Chausses' : '裤',
-        //护甲部位
-        'Cap ' : '帽 ',
-        '/Cap$/' : '帽 ',
-        'Robe' : '长袍',
-        'Breastplate' : '护胸',
-        'Cuirass' : '胸甲',
-        'Gloves' : '手套',
-        'Gauntlets' : '手甲',
-        'Pants' : '裤',
-        'Leggings' : '护腿',
-        'Greaves' : '护胫',
-        'Shoes' : '鞋',
-        'Boots' : '靴子',
-        'Sabatons' : '铁靴',
-        'Helmet' : '头盔',
-        '动力 Armor' : '动力 盔甲',
-
-        //前缀
-        'Ethereal' : '虚空',
+        ////////////////////////前缀////////////////////////
+        // 武器前缀
+        'Ethereal' : '✪虚空✪',
         'Fiery' : '红莲(火)',
         'Arctic' : '北极(冰)',
         'Shocking' : '雷鸣(雷)',
         'Tempestuous' : '风暴(风)',
         'Hallowed' : '圣光(圣)',
         'Demonic' : '魔性(暗)',
-        'Reinforced' : '坚固的（减伤）',
-        'Radiant' : '魔光的（魔伤）',
-        'Mystic' : '神秘的（暴击）',
-        'Charged' : '充能的（加速）',
-        'Amber' : '琥珀的（雷抗）',
-        'Mithril' : '秘银的（低重）',
-        'Agile' : '俊敏的（加速）',
-        'Zircon' : '锆石的（圣抗）',
-        'Frugal' : '节约的（省魔）',
-        'Jade' : '翡翠的（风抗）',
-        'Cobalt' : '钴石的（冰抗）',
-        'Ruby' : '红宝石（火抗）',
-        'Onyx' : '缟玛瑙（暗抗）',
-        'Savage' : '残暴的（暴伤）',
-        'Shielding' : '盾化的（格挡）',
-        //旧版前缀
-        ' Shield ' : ' 盾化的（格挡） ', //旧版的盾化前缀和盾一模一样……前面已经充分排除其它带盾的应该没问题吧……
+        // 防具和盾前缀
+        'Amber' : '琥珀的(雷抗)',
+        'Zircon' : '锆石的(圣抗)',
+        'Jade' : '翡翠的(风抗)',
+        'Cobalt' : '钴石的(冰抗)',
+        'Ruby' : '红宝石(火抗)',
+        'Onyx' : '缟玛瑙(暗抗)',
+        'Reinforced' : '加固的(减伤)', // 盾/皮革
+        'Mithril' : '秘银的(低重)', // 盾/板甲/动力
+        'Agile' : '俊敏的(攻速)', // 盾/暗影/皮革
+        'Savage' : '残暴的(攻暴伤)', // 暗影/动力
+        'Shielding' : '盾化的(格挡)', // 板甲
+        'Charged' : '充能的(法速)', // 棉制/相位
+        'Frugal' : '节约的(省魔)', // 棉制/相位
+        'Radiant' : '✪魔光✪(法伤)', // 相位
+        'Mystic' : '神秘的(法暴伤)', // 相位
+        ///////////////////////后缀////////////////////////
+        // 近战武器/动力后缀
+        'of Slaughter' : '杀戮(攻伤)', // 动力
+        'of Balance' : '平衡(攻命/攻暴)', // 动力/!斧
+        'of the Vampire' : '吸血鬼(吸血)', // 近战
+        'of the Illithid' : '夺心魔(吸魔)', // 近战
+        'of the Banshee' : '报丧女妖(吸灵)', // 近战
+        // 武器后缀
+        'of Swiftness' : '迅捷(攻速)', // 单手!刺剑
+        'of the Battlecaster' : '战法师(法命/魔耗/干涉)', // 单手/双手!斧!太刀/小圆盾
+        'of the Nimble' : '灵活(招架)', // 棍/西洋剑/脇差/小圆盾
+        // 法杖/布甲后缀
+        'of Focus' : '专注(法命/魔耗/法暴)', // 法杖
+        'of Destruction' : '毁灭(法伤)', // 柳木杖/铁木杖
+        'of the Elementalist' : '元素使(元素熟练)', // 棉制/!橡木杖
+        'of the Heaven-sent' : '天堂(神授熟练)', // 棉制/铁木杖/橡木杖
+        'of the Demon-fiend' : '恶魔(禁忌熟练)', // 棉制/柳木杖/铁木杖
+        'of the Earth-walker' : '地行者(辅助熟练)', // 棉制/红木杖/橡木杖
+        'of the Curse-weaver' : '咒术师(衰折熟练)', // 棉制/!橡木杖
+        'of Surtr' : '苏尔特(火伤)', // 相位/红木杖
+        'of Niflheim' : '尼芙菲姆(冰伤)', // 相位/红木杖
+        'of Mjolnir' : '姆乔尔尼尔(雷伤)', // 相位/红木杖
+        'of Freyr' : '弗瑞尔(风伤)', // 相位/红木杖
+        'of Heimdall' : '海姆达(圣伤)', // 相位/!柳木杖
+        'of Fenrir' : '芬里尔(暗伤)', // 相位/红木杖/铁木杖
+        // 盾/防具后缀
+        'of Dampening' : '抑制(免敲)', // Any
+        'of the Barrier' : '屏障(格挡)', // 小圆盾
+        'of Warding' : '保卫(魔防)', // !暗影&!相位
+        'of Protection' : '守护(物防)', // !暗影&!相位
+        'of Stoneskin' : '石肤(免斩)', // !布甲
+        'of Deflection' : '偏转(免刺)', // !布甲
+        'of the Fleet' : '快速(回避)', // 暗影
+        'of Negation' : '否定(抵抗)', // 暗影
+        'of the Shadowdancer' : '影舞者(攻暴/回避)', // 暗影
+        'of the Arcanist' : '奥术师(法命/双智)', // 暗影
+        ////////////////////////旧版////////////////////////
+        // 旧版前缀
+        ' Shield ' : ' 盾化的(格挡) ', // 旧版的盾化前缀和盾一模一样……前面已经充分排除其它带盾的应该没问题吧……
         'Bronze' : '铜',
         'Iron' : '铁',
         'Silver' : '银',
@@ -1818,113 +1865,85 @@ var words = {
         '-tipped' : '-前端',
         'Astral' : '五芒星',
         'Quintessential' : '第五元素',
-
-        //后缀
-        'of Slaughter' : '杀戮',
-        'of Balance' : '平衡',
-        'of Swiftness' : '迅捷',
-        'of the Vampire' : '吸血鬼',
-        'of the Illithid' : '灵吸怪',
-        'of the Banshee' : '报丧女妖',
-        'of the Nimble' : '招架',
-        'of the Battlecaster' : '战法师',
-        'of Destruction' : '毁灭',
-        'of Focus' : '专注',
-        'of Surtr' : '苏尔特（火伤）',
-        'of Niflheim' : '尼芙菲姆（冰伤）',
-        'of Mjolnir' : '姆乔尔尼尔（雷伤）',
-        'of Freyr' : '弗瑞尔（风伤）',
-        'of Heimdall' : '海姆达（圣伤）',
-        'of Fenrir' : '芬里尔（暗伤）',
-        'of the Elementalist' : '元素使',
-        'of the Heaven-sent' : '天堂',
-        'of the Demon-fiend' : '恶魔',
-        'of the Earth-walker' : '地行者',
-        'of the Curse-weaver' : '咒术师',
-        'of the Barrier' : '格挡',
-        'of Warding' : '魔防',
-        'of Protection' : '物防',
-        'of Dampening' : '抑制',
-        'of Stoneskin' : '石肤',
-        'of Deflection' : '偏转',
-        'of the Shadowdancer' : '影舞者',
-        'of the Arcanist' : '奥术师',
-        'of the Fleet' : '迅捷',
-        'of Negation' : '否定',
-        //旧装备后缀
+        // 旧武器后缀
         'of the Priestess' : '牧师',
+        // 旧防具后缀
         'of the Hulk' : '浩克',
-        'of the 盾化的（格挡） Aura' : '守护光环', //Shielding Aura
-        'of the Ox' : '牛（力量）',
-        'of the Raccoon' : '浣熊（灵巧）',
-        'of the Cheetah' : '猎豹（敏捷）',
-        'of the Turtle' : '乌龟（体质）',
-        'of the Fox' : '狐狸（智力）',
-        'of the Owl' : '猫头鹰（智慧）',
-        'of the Stone-skinned' : '硬皮（减伤）',
-        'of the Fire-eater' : '吞火者（火抗）',
-        'of the Frost-born' : '冰人（冰抗）',
-        'of the Thunder-child' : '雷之子（雷抗）',
-        'of the Wind-waker' : '驭风者（风抗）',
-        'of the Thrice-blessed' : '三重祝福（圣抗）',
-        'of the Spirit-ward' : '幽冥结界（暗抗）',
-
+        'of the 盾化的(格挡) Aura' : '守护光环', // Shielding Aura
+        'of the Ox' : '公牛(力量)',
+        'of the Raccoon' : '浣熊(灵巧)',
+        'of the Cheetah' : '猎豹(敏捷)',
+        'of the Turtle' : '乌龟(体质)',
+        'of the Fox' : '狐狸(智力)',
+        'of the Owl' : '夜枭(智慧)',
+        'of the Stone-skinned' : '硬肤者(免伤)',
+        'of the Fire-eater' : '噬火者(火抗)',
+        'of the Frost-born' : '冰诞者(冰抗)',
+        'of the Thunder-child' : '雷之子(雷抗)',
+        'of the Wind-waker' : '驭风者(风抗)',
+        'of the Thrice-blessed' : '三重祝福(圣抗)',
+        'of the Spirit-ward' : '幽冥结界(暗抗)',
     },
 
     ///////////////////////////////////////////////////////装备后缀
-    ////此字典目前仅用于独立装备信息页
-    ///////////////////////////////////////////////////////
+      ////此字典目前仅用于独立装备信息页
+      ///////////////////////////////////////////////////////
     equipsSuffix: {
         //独立装备信息页面中装备名可能会分行导致无法匹配完整后缀，此处做特殊处理补充
         //为防止错误匹配其它单词，使用结尾正则表达式仅匹配后缀
-        '/Slaughter$/' : '杀戮',
-        '/Balance$/' : '平衡',
-        '/Swiftness$/' : '迅捷',
-        '/Vampire$/' : '吸血鬼',
-        '/Illithid$/' : '灵吸怪',
-        '/Banshee$/' : '报丧女妖',
-        '/Nimble$/' : '招架',
-        '/Battlecaster$/' : '战法师',
-        '/Destruction$/' : '毁灭',
-        '/Focus$/' : '专注',
-        '/Surtr$/' : '苏尔特（火伤）',
-        '/Niflheim$/' : '尼芙菲姆（冰伤）',
-        '/Mjolnir$/' : '姆乔尔尼尔（雷伤）',
-        '/Freyr$/' : '弗瑞尔（风伤）',
-        '/Heimdall$/' : '海姆达（圣伤）',
-        '/Fenrir$/' : '芬里尔（暗伤）',
-        '/Elementalist$/' : '元素使',
-        '/Heaven-sent$/' : '天堂',
-        '/Demon-fiend$/' : '恶魔',
-        '/Earth-walker$/' : '地行者',
-        '/Curse-weaver$/' : '咒术师',
-        '/Barrier$/' : '格挡',
-        '/Warding$/' : '魔防',
-        '/Protection$/' : '物防',
-        '/Dampening$/' : '抑制',
-        '/Stoneskin$/' : '石肤',
-        '/Deflection$/' : '偏转',
-        '/Shadowdancer$/' : '影舞者',
-        '/Arcanist$/' : '奥术师',
-        '/Fleet$/' : '迅捷',
-        '/Negation$/' : '否定',
-        //部分旧装备后缀
+        // 近战武器/动力后缀
+        '/Slaughter$/' : '杀戮(攻伤)', // 动力
+        '/Balance$/' : '平衡(攻命/攻暴)', // 动力/!斧
+        '/Vampire$/' : '吸血鬼(吸血)',
+        '/Illithid$/' : '夺心魔(吸魔)',
+        '/Banshee$/' : '报丧女妖(吸灵)',
+        // 武器后缀
+        '/Swiftness$/' : '迅捷(攻速)', // 单手!刺剑
+        '/Battlecaster$/' : '战法师(法命/魔耗/干涉)', // 单手/双手!斧!太刀/小圆盾
+        '/Nimble$/' : '灵活(招架)', // 棍/西洋剑/脇差/小圆盾
+        // 法杖/布甲后缀
+        '/Focus$/' : '专注(法命/魔耗/法暴)', // 法杖
+        '/Destruction$/' : '毁灭(法伤)', // 柳木杖/铁木杖
+        '/Elementalist$/' : '元素使(元素熟练)', // 棉制/!橡木杖
+        '/Heaven-sent$/' : '天堂(神授熟练)', // 棉制/铁木杖/橡木杖
+        '/Demon-fiend$/' : '恶魔(禁忌熟练)', // 棉制/柳木杖/铁木杖
+        '/Earth-walker$/' : '地行者(辅助熟练)', // 棉制/红木杖/橡木杖
+        '/Curse-weaver$/' : '咒术师(衰折熟练)', // 棉制/!橡木杖
+        '/Surtr$/' : '苏尔特(火伤)', // 相位/红木杖
+        '/Niflheim$/' : '尼芙菲姆(冰伤)', // 相位/红木杖
+        '/Mjolnir$/' : '姆乔尔尼尔(雷伤)', // 相位/红木杖
+        '/Freyr$/' : '弗瑞尔(风伤)', // 相位/红木杖
+        '/Heimdall$/' : '海姆达(圣伤)', // 相位/!柳木杖
+        '/Fenrir$/' : '芬里尔(暗伤)', // 相位/红木杖/铁木杖
+        // 盾/防具后缀
+        '/Dampening$/' : '抑制(免敲)', // Any
+        '/Barrier$/' : '屏障(格挡)', // 小圆盾
+        '/Warding$/' : '保卫(魔防)', // !暗影&!相位
+        '/Protection$/' : '守护(物防)', // !暗影&!相位
+        '/Stoneskin$/' : '石肤(免斩)', // !布甲
+        '/Deflection$/' : '偏转(免刺)', // !布甲
+        '/Fleet$/' : '快速(回避)', // 暗影
+        '/Negation$/' : '否定(抵抗)', // 暗影
+        '/Shadowdancer$/' : '影舞者(物暴/回避)', // 暗影
+        '/Arcanist$/' : '奥术师(魔命/双智)', // 暗影
+        //旧武器后缀
         '/Priestess$/' : '牧师',
+        //旧防具后缀
         '/Hulk$/' : '浩克',
-        '/盾化的（格挡） Aura$/' : '守护光环', //Shielding Aura
-        '/Ox$/' : '牛（力量）',
-        '/Raccoon$/' : '浣熊（灵巧）',
-        '/Cheetah$/' : '猎豹（敏捷）',
-        '/Turtle$/' : '乌龟（体质）',
-        '/Fox$/' : '狐狸（智力）',
-        '/Owl$/' : '猫头鹰（智慧）',
-        '/Stone-skinned$/' : '硬皮（减伤）',
-        '/Fire-eater$/' : '吞火者（火抗）',
-        '/Frost-born$/' : '冰人（冰抗）',
-        '/Thunder-child$/' : '雷之子（雷抗）',
-        '/Wind-waker$/' : '驭风者（风抗）',
-        '/Thrice-blessed$/' : '三重祝福（圣抗）',
-        '/Spirit-ward$/' : '幽冥结界（暗抗）',
+        '/盾化的(格挡) Aura$/' : '守护光环', //Shielding Aura
+        '/Ox$/' : '公牛(力量)',
+        '/Raccoon$/' : '浣熊(灵巧)',
+        '/Cheetah$/' : '猎豹(敏捷)',
+        '/Turtle$/' : '乌龟(体质)',
+        '/Fox$/' : '狐狸(智力)',
+        '/Owl$/' : '夜枭(智慧)',
+        '/Stone-skinned$/' : '硬肤者(免伤)',
+        '/Fire-eater$/' : '噬火者(火抗)',
+        '/Frost-born$/' : '冰诞者(冰抗)',
+        '/Thunder-child$/' : '雷之子(雷抗)',
+        '/Wind-waker$/' : '驭风者(风抗)',
+        '/Thrice-blessed$/' : '三重祝福(圣抗)',
+        '/Spirit-ward$/' : '幽冥结界(暗抗)',
 
         //处理词缀。应该避免在没有必要的地方使用此字典，以免处理掉其它正常句子的词缀
         ' of ' : ' ',
@@ -1942,6 +1961,8 @@ var words = {
         'One-Handed Weapon':'单手武器',
         'Two-Handed Weapon':'双手武器',
         'Staff':'法杖',
+        'Force Shield':'力场盾',
+        'Kite Shield':'鸢盾',
         'Shield':'盾牌',
         'Cloth Armor':'布甲',
         'Light Armor':'轻甲',
@@ -2040,10 +2061,10 @@ var words = {
 
         'Proficiency':'熟练度加成',
         'Elemental ':'元素 ',
-        'Divine':'神圣',
-        'Forbidden':'黑暗',
-        'Deprecating':'减益',
-        'Supportive':'增益',
+        'Divine':'神授',
+        'Forbidden':'禁忌',
+        'Deprecating':'衰折',
+        'Supportive':'辅助',
 
         'Primary Attributes':'属性加成',
         'Strength':'力量',
@@ -2599,11 +2620,11 @@ var words = {
         'Their natural range of weapons allow them to bite down with sharp teeth, shred their foes with large claws, and impale them on pointy tusks. The most powerful beasts can simply use the sheer bulk of their body to crush a target.' : '它们广泛的分布范围允许野兽使用锋利的牙齿刺穿它们的敌人或者使用利爪撕碎它们，最强大的野兽甚至只用身体撞击就可以击溃绝大部分敌人。',
         'Rumors persist about terrible Beasts corrupted beyond all recognition with dark magicks, but those who have encountered them are not in a state to give a coherent description of their abilities.' : '有确切传闻说，存在一些被黑魔法腐化的野兽，但是遇到它们的人都没有办法对它们做出连贯准确的描述。',
         'Celestials are supernatural divine beings that reside on a different plane of existence. From time to time, some of these beings enter our world for reasons they usually choose not to divulge to outsiders. While worshipped by some individuals and groups as inherently good, it is suspected that those who leave have their own agendas that do not necessarily mesh well with that ideal.' : '天人是一种超自然而且神圣的存在，他们居住在不同的星球上，有些时候一些天人也会因为一些不想被外人知道的原因进入我们世界。天人的固有特性使其被一些个人和团体所崇拜，但也有些人怀疑那些脱离大部队擅离的天人可能不是想象中的那么完美。',
-        'Appearing as lithe humanoid creatures who refuse to wear any form of armor, they have below average resistance to most physical attacks but make up for it with high agility. They have high resistance to elemental magicks, and are nearly impervious to divine attacks. They are however very weak against forbidden magicks.' : '天人作为一种轻盈的人形生物拒绝任何形势的盔甲，因此他们的物理抗性很低，但是动作敏捷，天人有很高的元素魔法抗性，而且有很高的神圣魔法抗性，但是它们对黑暗魔法的抗性很弱。',
+        'Appearing as lithe humanoid creatures who refuse to wear any form of armor, they have below average resistance to most physical attacks but make up for it with high agility. They have high resistance to elemental magicks, and are nearly impervious to divine attacks. They are however very weak against forbidden magicks.' : '天人作为一种轻盈的人形生物拒绝任何形势的盔甲，因此他们的物理抗性很低，但是动作敏捷，天人有很高的元素魔法抗性，而且有很高的神圣魔法抗性，但是它们对禁忌魔法的抗性很弱。',
         'Celestials can use a wide variety of humanoid armaments, but for unknown reasons they do not employ piercing weapons in their arsenal. Higher level celestials can imbue their weapons with pure divine power that lets their melee attacks deal holy damage.' : '天人可以使用各种各样的装备，不过因为一些不明的原因，它们没有刺击用的武器，一些更高层次的天人可以使用神圣魔法的力量，它们可以给近战攻击附带上神圣属性伤害。',
         'Daimons are supposedly corporeal manifestations of impure and often malevolent supernatural spirits that, some say, originate from the same plane of existance as Celestials. Their exact nature and relation to Celestials is however unknown.' : '魔灵，它们在自然中的存在通常被推测为一种不纯净和恶毒的精神集合体，有人说，它们和天人起源于同一位面，不过它们和天人确切的关系尚未为人们所知。',
         'These spirits can take on any number of different appearances, but tend to choose one specifically tailored to the fears of their opponent. To allow for this shape changing capability, they do not wear any armor or use any other form of humanoid weaponry. This leaves them weak to physical attacks.' : '这些精神体外观各异，不过它们通常会选择敌人最恐惧的模样出现，为了保持这种能力的持续使用，魔灵不装备任何铠甲和装备，这使得它们无法进行物理攻击。',
-        'Like Celestials, they have high resistances to elemental magicks. They are almost imprevious to forbidden magicks, but highly vulnerable to divine attacks.' : '与天人类似，魔灵对元素魔法具有高抗性，对黑暗魔法具有很高抗性，但是惧怕物理攻击和神圣魔法。',
+        'Like Celestials, they have high resistances to elemental magicks. They are almost imprevious to forbidden magicks, but highly vulnerable to divine attacks.' : '与天人类似，魔灵对元素魔法具有高抗性，对禁忌魔法具有很高抗性，但是惧怕物理攻击和神圣魔法。',
         'Instead of forged weapons, these creatures take advantage of their physical malleability to reshape parts of their own body into blade-like weapons or sharp implements that they use for slashing and stabbing attacks. Higher level daimons are said to be able to conjure weapons of pure darkness that can bypass all defenses not especially enchanted to withstand it.' : '比起使用锻造的武器，魔灵更擅长使用自己身体塑性而成的肢体武器，这些肢体武器像刀片和尖刺一样锐利，使得魔灵可以使用刺击和斩击攻击，高阶的魔灵据说可以召唤纯净黑暗武器，能无视除了黑暗抗性之外的所有抗性对敌人造成伤害。',
         'Dragonkin consist of Dragons, Drakes, and all other creatures that could be mistaken for giant flying fire-breathing lizards. That is however somewhat of an over-simplification as not all Dragonkin can fly, while breath attacks are not always fire, and are only fully developed in mature members of the species.' : '龙类包括龙，双足飞龙，以及一切会被认为是巨大的飞天喷火蜥蜴的生物，这种分类可能有点过于简化，因为并不是所有的龙类都有飞行能力，它们的吐息也不一定是火焰，只有它们之中发展最为成熟的那些种类才具有这些特性。',
         'Elementals are metaphysical beings that manifest as crystalline beings of pure elemental energy. It is thought that they can change between different elemental forms at will, but this has never been observed in battle.' : '元素生物是一种抽象的存在，表现为纯粹元素的结晶，通常它们被认为可以自由的切换自身的元素魔法的形态，但是从来没有在战斗中观测到这种情况。',
@@ -2617,11 +2638,11 @@ var words = {
         'Sprites are diminuitive beings that seldom get involved in the Big World, prefering to remain with their own kin in the hidden places of the land where nature is still thick and undisturbed. Only a small minority choose to seek out the human world, where their high intelligence and small size make them excel for many tasks, ranging from accounting to assassination.' : '妖精是一种纤小的存在，它们通常极少进入人类的“大世界”，宁愿留在自己的熟悉的在土地或者不受干扰的隐蔽场所中。只有少数妖精会选择进入人类的世界，在那里他们的高智力和小尺寸使它们擅长执行许多任务，从会计到暗杀。',
         'Sprites are not a single species, but most of the big folk will be hard pressed to tell a pixie apart from a faery. They are commonly armed with using tiny swords and rapiers, and while they do not have much strength to put behind a thrust, their ability to seek out the most vulnerable parts of a target still make them a force to be reckoned with.' : '妖精并不是一种单一的物种，但是大部分人都难以分辨小精灵与精灵的区别，它们通常手持微小的剑或者细剑，而且通常没有多少力量用剑进行刺击攻击，但是它们能寻找敌人最脆弱的地点进行攻击依然是妖精一个不可小视的能力。',
         'Higher level Sprites can master powerful magicks, and many an unwary adventurer have engaged them recklessly only to be sent to an early grave.' : '高阶的妖精掌握了强大的法术，可以早早的把那些轻敌的冒险家送入坟墓。',
-        'Physically weak, the best way of dealing with them is swatting them with a crushing attack, but they are fast and hard to hit. Their tiny size also makes them difficult to hit them with stabbing weapons. All Sprites have some resistance to elemental magicks, and depending on their natural affinity they can even be fully imprevious to some elements. They are however naturally weak to the forbidden magicks.' : '妖精的物理抗性较弱，惧怕敲击攻击，但是动作极其敏捷，难以击中，所以使用刺击武器更加难以击中它们，所有的妖精对元素魔法都有一定的抗性，而且因为它们的自然亲和力，它们对神圣魔法也有一定的抵抗，但是它们非常惧怕黑暗魔法。',
+        'Physically weak, the best way of dealing with them is swatting them with a crushing attack, but they are fast and hard to hit. Their tiny size also makes them difficult to hit them with stabbing weapons. All Sprites have some resistance to elemental magicks, and depending on their natural affinity they can even be fully imprevious to some elements. They are however naturally weak to the forbidden magicks.' : '妖精的物理抗性较弱，惧怕敲击攻击，但是动作极其敏捷，难以击中，所以使用刺击武器更加难以击中它们，所有的妖精对元素魔法都有一定的抗性，而且因为它们的自然亲和力，它们对神圣魔法也有一定的抵抗，但是它们非常惧怕禁忌魔法。',
         'Undeads are animated necrotic remnants of living beings, cursed to an eternal lifeless existance with no warmth or joy. They range from mindless brutes such as zombies and animated skeletons, to higher undeads that have preserved parts of their mind but lost their soul, like liches, vampires and banshees.' : '不死族就是一些会动的残肢断尸，被诅咒而成为永生的存在的它们没有温暖和快乐的概念，它们的范围从无主的野兽尸骸比如亡灵或者僵尸，到高等的亡灵与巫妖，它们在保留意识的同时也失去了它们的灵魂。',
-        'Having no need to maintain a body temperature and no vital processes that can be disturbed by electricity, undeads are highly resistant to cold and electrical magicks. Being born from darkness itself also makes them imprevious to forbidden magicks, but they are vulnerable to divine attacks and fire magicks.' : '尸体没有保持体温的必要，也不惧怕电的伤害，使其有较高的冰冷与闪电抗性，诞生与黑暗魔法本身的它们也对黑暗魔法有极高的抗性，但是它们惧怕神圣魔法和火焰魔法的攻击。',
+        'Having no need to maintain a body temperature and no vital processes that can be disturbed by electricity, undeads are highly resistant to cold and electrical magicks. Being born from darkness itself also makes them imprevious to forbidden magicks, but they are vulnerable to divine attacks and fire magicks.' : '尸体没有保持体温的必要，也不惧怕电的伤害，使其有较高的冰冷与闪电抗性，诞生与黑暗本身的它们也对禁忌魔法有极高的抗性，但是它们惧怕神圣魔法和火焰魔法的攻击。',
         'Piercing and crushing attacks are ineffective due to a lack of weak points, but cutting off limbs works reasonably well.' : '刺击与敲击对亡灵并没有多大的意义，但是切断它们的四肢倒是非常有效的战术。',
-        'Mindless undeads tend to use simple melee implements like swords, or just crush their targets using their own limbs. Higher level undeads can use more sophisticated weaponry, and some even master deadly forms of forbidden magicks.' : '无主的亡灵们通常倾向于使用简单的近战武器比如剑，一些干脆使用自己的肢体进行敲击攻击，更高级别的亡灵会使用更复杂的武器，甚至有精通黑暗魔法的大法师存在',
+        'Mindless undeads tend to use simple melee implements like swords, or just crush their targets using their own limbs. Higher level undeads can use more sophisticated weaponry, and some even master deadly forms of forbidden magicks.' : '无主的亡灵们通常倾向于使用简单的近战武器比如剑，一些干脆使用自己的肢体进行敲击攻击，更高级别的亡灵会使用更复杂的武器，甚至有精通禁忌魔法的大法师存在',
 
         'Create new monster with base damage type of' : '选择要创建的怪物的基础攻击类型',
         'Strength':'力量',
@@ -2761,8 +2782,8 @@ var words = {
         'Yuki Nagato' : '长门有希',
         'Real Life' : '现实生活',
         'Invisible Pink Unicorn' : '隐形粉红独角兽',
-        'Flying Spaghetti Monster' : '飞行意大利面怪物',
-        'Triple Trio and the Tree' : '大树十重奏',
+        'Flying Spaghetti Monster' : '飞天意面怪',
+        'Triple Trio and the Tree' : '三重三与世界树',
 
         'There are no challenges available at your level. Check back later!' : '没有适用于你当前等级的挑战。努力升级以后再来查看吧！',
         'Challenge' : '名称',
@@ -2816,14 +2837,14 @@ var words = {
     ///////////////////////////////////////////////////////小马引导图
     riddlemaster: {
         'Choose the right answer based on the image below' : '请回答以下图片中小马的正确名称(输入A或B或C)，点击右侧PONY CHART按钮可查看小马名称参考',
-        'Select ALL ponies you see in the image above then hit "Submit Answer" before the time limit runs out.': '请在时间限制结束之前选择你在上图认出的所有小马名称并点击“提交答案”',
+        'Select ALL ponies you see in the image above then hit "Submit Answer" before the time limit runs out.' : '请在时间限制结束之前选择你在上图认出的所有小马名称并点击“提交答案”',
         'Submit Answer' : '提交答案',
         'Timer' : '时间',
     },
 
     ///////////////////////////////////////////////////////正在战斗页面
     battling: {
-    ///////////////////////////////////////////////////////战斗行动
+        ///////////////////////////////////////////////////////战斗行动
         '/^Attack$/' : '攻击',
         '/^Defend$/' : '防御',
         '/^Focus$/' : '专注',
@@ -2839,7 +2860,7 @@ var words = {
         'Reduces the chance that your next spell will be resisted. Your defenses and evade chances are lowered for the next turn.' : '降低本回合自身回避、格挡、招架和抵抗率，增加下一回合魔法命中和反抵抗率。消耗 25% 斗气恢复 5% 基础魔力值。',
         'Choose from the Battle Actions highlighted above, and use them to defeat your enemies listed to the right. When all enemies are reduced to zero Health, you win. If your Health reaches zero, you are defeated.' : '选择上面的任意一个行动来打倒右侧的敌人。当所有敌人生命为0时，你获得胜利，当你的生命为0时，你被打败。',
 
-    /////////////////////////////////////////////////////效果、需求说明
+        /////////////////////////////////////////////////////效果、需求说明
         'Expires if magic is depleted to below 10%' : '如果你的MP低于10%将会消散',
         'Permanent until triggered' : '直到触发前将会一直有效',
         '/Expires in (\\d+) turns?/' : '剩余持续时间 $1 回合',
@@ -2848,9 +2869,9 @@ var words = {
         '/Requires (\\d+) Magic Points and (\\d+) Charges? to use/' : '需要 $1 点 MP 和 $2 格斗气',
         '/Cooldown: (\\d+) turns?/' : '冷却时间: $1 回合',
 
-    /////////////////////////////////////////////////////技能、技巧名称
+        /////////////////////////////////////////////////////技能、技巧名称
         // 使用skills字典
-    /////////////////////////////////////////////////////技能、技巧说明
+        /////////////////////////////////////////////////////技能、技巧说明
         //先天技能
         'Run away from the current battle.' : '从战斗中逃跑，逃跑可能需要完整的一回合才会生效，在此期间怪物仍然可以攻击。',
         'Retrieve data on the target.' : '撷取目标的情报。',
@@ -2900,7 +2921,7 @@ var words = {
         'The target is silenced, preventing it from using special attacks and magic.' : '使目标封口，防止它使用特殊攻击。',
         'The target is lulled to sleep, preventing it from taking any actions.' : '使目标进入沉睡，防止它采取任何行动。',
         'The target is slowed by' : '使目标延迟',
-        'making it attack less frequently.': '它们攻击频率会降低',
+        'making it attack less frequently.' : '它们攻击频率会降低',
         'The target is weakened, making it deal less damage, and preventing it from scoring critical hits.' : '使目标弱化，让它的攻击打出较低伤害且能防止它打出暴击。',
 
         //攻击咒语
@@ -2944,8 +2965,8 @@ var words = {
         'You gain +25% resistance to Holy elemental attacks and do 25% more damage with Holy magicks.' : '你获得 +25% 的神圣魔法耐性且获得 25% 的额外神圣魔法伤害。',
         'You gain +25% resistance to Dark elemental attacks and do 25% more damage with Dark magicks.' : '你获得 +25% 的黑暗魔法耐性且获得 25% 的额外黑暗魔法伤害。',
         'Grants the Haste effect.' : '使用产生加速效果。',
-        'Grants the Protection effect.' : '使用产生保护效果。',
-        'Grants the Haste and Protection effects with twice the normal duration.' : '产生加速和保护的效果。两倍持续时间',
+        'Grants the Protection effect.' : '使用产生守护效果。',
+        'Grants the Haste and Protection effects with twice the normal duration.' : '产生加速和守护的效果。两倍持续时间',
         'Grants the Absorb effect.' : '使用后获得吸收效果。',
         'Grants the Shadow Veil effect.' : '使用产生闪避效果。',
         'Grants the Spark of Life effect.' : '使用产生生命火花效果。',
@@ -2957,13 +2978,13 @@ var words = {
         'Mystic Gem' : '神秘宝石',
         'Health Potion' : '体力药水',
         'Health Draught' : '体力长效药',
-        'Health Elixir' : '终极体力药',
+        'Health Elixir' : '体力秘药',
         'Mana Potion' : '法力药水',
         'Mana Draught' : '法力长效药',
-        'Mana Elixir' : '终极法力药',
+        'Mana Elixir' : '法力秘药',
         'Spirit Potion' : '灵力药水',
         'Spirit Draught' : '灵力长效药',
-        'Spirit Elixir' : '终极灵力药',
+        'Spirit Elixir' : '灵力秘药',
         'Last Elixir' : '终极秘药',
         'Energy Drink' : '能量饮料',
         'Caffeinated Candy' : '咖啡因糖果',
@@ -2982,8 +3003,8 @@ var words = {
         'Scroll of Shadows' : '幻影卷轴',
         'Scroll of Absorption' : '吸收卷轴',
         'Scroll of Life' : '生命卷轴',
-        'Scroll of Protection' : '保护卷轴',
-        'Scroll of the Gods' : '神之卷轴',
+        'Scroll of Protection' : '守护卷轴',
+        'Scroll of the Gods' : '众神卷轴',
 
     /////////////////////////////////////////////////////状态
         //先天能力
@@ -3065,7 +3086,7 @@ var words = {
         '/^Spark of Life$/' : '生命火花[S]',
         '/^Cloak of the Fallen$/' : '陨落的披风[S]',
         '/^Heartseeker$/' : '穿心[S]',
-        '/^Arcane Focus$/' : '奥术集成[S]',
+        '/^Arcane Focus$/' : '奥术集中[S]',
         'The holy effects of the spell are restoring your body.' : '神奇的细胞再生效果正在恢复你的身体',
         'Places a shield effect on the target, absorbing' : '对目标施加护盾效果，吸收所有攻击',
         'of the damage from all attacks.' : '的伤害值。',
@@ -3186,7 +3207,7 @@ var words = {
         changer.title = '点击切换翻译';
         changer.id = 'change-translate';
         changer.addEventListener('click',restoreTranslate);
-        changer.style.cssText = "cursor:pointer;z-index:1000;font-size: 16px;position:fixed; top:200px; left:0px; color: white;background : black";
+        changer.style.cssText = "cursor:pointer;z-index:1000;font-size: 16px;position:absolute; bottom: 120px; left:0px; color: white;background : black";
         document.body.appendChild(changer);
     }
 
@@ -3311,7 +3332,8 @@ var words = {
             observer.observe(document.body.querySelector('#battle_main'), {childList:true, attribute: true, attributeFilter: ['value', 'title']}); //监听翻译动态内容
         }
         for (const [selector, value] of Object.entries(dictsMap)) {
-            const elem = document.body.querySelector(selector);
+          const elems = document.body.querySelectorAll(selector);
+          for (const elem of elems) {
             if (!elem) continue;
 
             const isDynamic = dynamicElem.includes(selector);
@@ -3324,6 +3346,7 @@ var words = {
                 dynamicDict.set(elem, dict); //存储字典以备动态翻译使用
                 observer.observe(elem, {childList:true, attribute: true, attributeFilter: ['value', 'title']}); //监听翻译动态内容
             }
+          }
         }
     }
 
@@ -3388,6 +3411,12 @@ var words = {
             translateAllText();
             initRestoreButton();
         }
+        translateIfLoaded('#hvut-bottom>div>a', '加载中', ['trains'].map(buildDict).flat());
+
+        for (let elem of document.body.querySelectorAll('.hvut-in-header.hvut-cphu-sub')) {
+            translateText(elem, hvutDict);
+        }
+        translateHvutEq();
         //console.timeEnd('hvtranslate');
     }
 
@@ -3407,6 +3436,44 @@ var words = {
             '#infopane:hover::after{content:"双击此处切换战斗翻译开关";position:absolute;left:0; bottom: 5px;font-weight:bold}';
     }
 
-    start();
+    function translateIfLoaded(selector, loadingText, dict) {
+        const all = document.querySelectorAll(selector);
+        let allLoaded = true;
+        //查找页面元素并调用翻译
+        if (!all || !all[0]) return;
+        for (let i = 0; i < all.length; i++) {
+            if (all[i].innerHTML.includes(loadingText)) {
+                allLoaded = false;
+                continue;
+            }
+            translateText(all[i], dict)
+        }
+        if (!allLoaded) {
+            setTimeout(() => translateIfLoaded(selector, loadingText), 100);
+        }
+    }
+    const hvutDict = ['equipsInfo', 'equipsPart', 'equipsName', 'equipsSuffix'].map(buildDict).flat();
+    const translated_hvut_eq = [];
+    function translateHvutEq() {
+        let isNew = false;
+        for (let elem of document.body.querySelectorAll('.hvut-eq-category, .hvut-eq-type')) {
+            if (translated_hvut_eq.includes(elem)) {
+                continue
+            }
+            translated_hvut_eq.push(elem)
+            isNew = true;
+            translateText(elem, hvutDict);
+        }
+        if (isNew) {
+            [1000, 5000, 10000].forEach(t => setTimeout(translateHvutEq, t));
+        }
+    }
+    const isEquPop = document.location.href.match(/\/equip\//);
+    if (isEquPop) {
+      setTimeout(start, 5000);
+    }
+    else {
+      [0,100,200,300,400,600,800,1000,2000,3000,4000,5000,10000].forEach(t=>setTimeout(start, t));
+    }
 
 }());
