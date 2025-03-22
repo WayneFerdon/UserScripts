@@ -3,8 +3,8 @@
 // @namespace      hentaiverse.org
 // @author         ggxxsol & NeedXuyao & mbbdzz & indefined & etc.
 // @icon           https://hentaiverse.org/y/favicon.png
-// @updateURL      https://sleazyfork.org/scripts/404118/code/script.meta.js
-// @downloadURL    https://sleazyfork.org/scripts/404118/code/script.user.js
+// @updateURL      https://github.com/WayneFerdon/UserScripts/raw/refs/heads/master/HVTranslate/HentaiVerse%E6%B1%89%E5%8C%96.user.js
+// @downloadURL    https://github.com/WayneFerdon/UserScripts/raw/refs/heads/master/HVTranslate/HentaiVerse%E6%B1%89%E5%8C%96.user.js
 // @description    基本完全汉化整个Hentaiverse文本，包括装备物品、界面说明和弹窗提示的汉化，带原文切换功能
 // @notice         本脚本已完全整合HV战斗汉化功能，与独立的HV战斗汉化脚本互斥，默认不开启，如需开启战斗汉化在战斗界面中双击信息面板的提示
 // @notice         完整功能需要在Hentaiverse主菜单 CHARACTER→SETTINGS 勾选自定义字体(Use Custom Font)并在下一行文本框中填上任意字体名称，拉到最下面点击Apply Changes
