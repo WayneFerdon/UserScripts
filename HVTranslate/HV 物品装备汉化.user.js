@@ -12,14 +12,13 @@
 // @notice       如与其它脚本同时使用冲突，可尝试调整脚本运行顺序，但无法保证完全兼容，或者将冲突的页面链接添加用户排除(@exclude)
 // @notice       如果你要在论坛买东西，挑好东西之后最好切换到原文再复制内容，因为别人并不一定看得懂经过翻译过后的东西
 // @icon         https://hentaiverse.org/y/favicon.png
-// @include      *://hentaiverse.org/*
-// @include      *://alt.hentaiverse.org/*
-// @exclude      *://*hentaiverse.org/*equip/*
+// @include      *://*hentaiverse.org/*
 // @exclude      *://*hentaiverse.org/*pages/showequip.php?*
 // @include      *://forums.e-hentai.org/*showtopic=*
 // @include      *://hvmarket.xyz/*
 // @include      *://reasoningtheory.net/*
-// @version      2025.11.05
+// @version      2025.11.05.a
+// @run-at         document-end
 // ==/UserScript==
 
 if (document.location.href.match(/ss=iw/)&&!document.getElementById('item_pane'))return
@@ -33,7 +32,13 @@ var translatedList = new Map(), translated = true, changer;
 // 否则需要先调用loadItems/loadEquips/loadEquipsInfo/loadExtra加载对应字典之后才能使用translate方法
 var dictItems, dictEquips, dictEquipsInfo, dictExtra;
 
-main();//执行汉化
+const loaded = {};
+if (document.location.href.match(/\/equip\//)) { // isEquPop
+  setTimeout(main, 5000);
+}
+else {
+  main();//执行汉化
+}
 
 function main(){
     var lklist = [
@@ -56,6 +61,16 @@ function main(){
         'Bazaar&ss=mk', //交易市场16
         'Bazaar&ss=am', //武器17
     ];
+
+    translateOnChange('#popup_box');
+    translateOnLoaded('.eqshop_pane>div>div>#item_pane,.eqshop_pane>div>div>#shop_pane,#inv_equip,#inv_eqstor', 'hvut-eq-loading', undefined, '.eqp>div:last-child,.hvut-eq-category,.hvut-eq-type');
+    translateOnLoaded('.hvut-bt-equip>li', '获取附魔状态中');
+    translateOnChange('.hvut-bt-enchant', translateItems);
+    translateOnChange('.hvut-bt-repair', translateItems);
+    translateOnChange('.hvut-bt-repairall', translateItems);
+    translateOnChange('.hvut-bt-inventory', translateItems);
+    translateOnLoaded('#hvut-bottom>.hvut-lt-div', '加载中');
+
     var location;
     for(location = 0; location < lklist.length; location++){
         // 匹配当前网址位置，lklist里面的网址顺序和下面case对应，更改顺序需要同时更改case
@@ -78,6 +93,10 @@ function main(){
             translateItems(".itemlist>tbody>tr>td>div");
             translateItems(".sa>div:last-child>div");
             //*/
+            translateOnChange('.hvut-ss-results', translateItems, '.hvut-ss-ul>li>span');
+            translateOnChange('.hvut-ss-results', translateEquips, '.hvut-ss-ul>li>*');
+            translateOnChange('.hvut-ss-log', translateItems, '.hvut-ss-p,.hvut-ss-ul>li>span');
+            translateOnChange('.hvut-ss-log', translateEquips, '.hvut-ss-p,.hvut-ss-ul>li>*');
             break;
 
         case 4: //装备仓库
@@ -87,9 +106,13 @@ function main(){
             break;
 
         case 7: //装备店
-            translateEquipsList();
+            // translateEquipsList();
             var equipdiv, i;
+            if (document.querySelector('.switchEquHide')) {
+              break;
+            }
             var equhide = document.createElement('span');
+            equhide.classList.add('switchEquHide');
             equhide.style.cssText = "cursor: pointer;z-index: 1000;font-size: 16px;position: fixed;top: 180px;left: 0px;color: red;background: black;user-select: none;";
             try{
                 if(!localStorage.hideflag) localStorage.hideflag = "隐藏锁定装备";
@@ -283,8 +306,14 @@ function initRestore() {
     changer.title = '点击切换翻译';
     changer.id = 'change-translate';
     changer.addEventListener('click',restore);
-    changer.style.cssText = "cursor:pointer;z-index:1000;font-size: 16px;position:fixed; top:200px; left:0px; color: white;background : black";
-    document.body.appendChild(changer);
+    changer.style.cssText = "cursor:pointer;z-index:1000;font-size: 16px; bottom:120px; left:4px; color: white;background : black";
+    let csp = document.getElementById('csp');
+    if(csp){
+      changer.style.cssText += "position: fixed;";
+    } else {
+      csp = document.body;
+    }
+    csp.appendChild(changer);
 }
 
 /**
@@ -300,24 +329,27 @@ function translate(target, dicts) {
         if (!translatedList.has(target)) translatedList.set(target, html); //保存原文
     }
     else html = target;
+    const result = html;
     for (var dict of dicts){ //遍历字典并翻译
         html = html.replace(dict[0], dict[1]);
     }
     if (isElem) {
-        target.innerHTML = html;
+        if (html !== result) {
+            target.innerHTML = html;
+        }
         return target;
     }
-    else return html;
+    else return result;
 }
 
 //翻译Hentaiverse内装备列表
 function translateEquipsList(){
-    if (document.querySelector('.eqtplabel')){
+  if (document.querySelector('.eqtplabel')){
         translateEquips('tr[onmouseover]>td:first-child');
         document.head.insertAdjacentHTML('beforeend', `<style>.lc>span{left:unset;position:unset;background:unset;border:unset}.lc>span:nth-child(2){position:absolute;top:0;left:0;height:20px;width:20px;background-color:#EDEADA;border:2px solid #B5A4A4;border-radius:3px}`);
     }
     else {
-        translateEquips(".equiplist div[id^='e'][onmouseover]");
+      translateEquips(".equiplist div[id^='e'][onmouseover]");
     }
     translateEquips(".hvut-eq-h5");
     translateEquips(".eqb>div");
@@ -352,6 +384,61 @@ function translateExtra(selector){
     Array.from(document.querySelectorAll(selector)).forEach(elem=>translate(elem, dictExtra));
 }
 
+function translateOnLoaded(selector, loadingText, method = undefined, selectorTrans = undefined) {
+    method = method ?? translateEquips;
+    if (loadingText) { // Type 1 : 通过加载中的文本判断
+        //查找页面元素并调用翻译
+        const all = document.querySelectorAll(selector);
+        if (!all) return;
+        for (let i = 0; i < all.length; i++) {
+            if (all[i].innerHTML.includes(loadingText)) {
+                setTimeout(() => translateOnLoaded(selector, loadingText, method, selectorTrans), 100);
+                return;
+            }
+        }
+        method(selectorTrans ?? selector);
+        return;
+    }
+    // Type 2 : 通过监听元素到变化停止
+    function onDone(selector, method) {
+        if (loaded[selector][1] === loaded[selector][0]) {
+            method(selector);
+            return;
+        }
+        loaded[selector][1] = loaded[selector][0];
+        setTimeout(_ => onDone(selector), 2000);
+    }
+
+    const observer = new MutationObserver((mutations, observer) => {
+        if (!translated) return;
+        mutations.forEach(mutation => {
+            loaded[selector][0] += 1 + mutation.addedNodes.length;
+        });
+    });
+    loaded[selector] = [0, undefined];
+    setTimeout(_ => onDone(selector, method), 2000);
+    Array.from(document.querySelectorAll(selector)).forEach(elem => observer.observe(elem, { subtree: true, childList: true, attribute: true, attributeFilter: ['value', 'title'] })); //监听翻译动态内容
+}
+
+function translateOnChange(selector, method = undefined, translateSelector = undefined) {
+    method ??= translateEquips;
+    translateSelector ??= selector;
+    const observer = new MutationObserver((mutations, observer) => {
+        if (!translated) return;
+        mutations.forEach(mutation => {
+            const nodes = Array.from(mutation.addedNodes);
+            nodes.push(mutation.target);
+            nodes.forEach(node => {
+                if (!node instanceof Element) return;
+                method(translateSelector);
+                node => observer.observe(node, { subtree: true, childList: true, attribute: true, attributeFilter: ['value', 'title'] });
+            })
+        });
+    });
+    method(translateSelector);
+    Array.from(document.querySelectorAll(selector)).forEach(elem => observer.observe(elem, { subtree: true, childList: true, attribute: true, attributeFilter: ['value', 'title'] })); //监听翻译动态内容
+}
+
 function loadItems(){
     if (dictItems) return dictItems;
     //道具字典
@@ -359,13 +446,13 @@ function loadItems(){
         //道具翻译
         'Health Potion' : '体力药水',
         'Health Draught' : '体力长效药',
-        'Health Elixir' : '终极体力药',
+        'Health Elixir' : '体力秘药',
         'Mana Potion' : '法力药水',
         'Mana Draught' : '法力长效药',
-        'Mana Elixir' : '终极法力药',
+        'Mana Elixir' : '法力秘药',
         'Spirit Potion' : '灵力药水',
         'Spirit Draught' : '灵力长效药',
-        'Spirit Elixir' : '终极灵力药',
+        'Spirit Elixir' : '灵力秘药',
         'Monster Chow' : '怪物饲料',
         'Last Elixir' : '终极秘药',
         'Energy Drink' : '能量饮料',
@@ -425,8 +512,8 @@ function loadItems(){
         'Scroll of Shadows' : '幻影卷轴',
         'Scroll of Absorption' : '吸收卷轴',
         'Scroll of Life' : '生命卷轴',
-        'Scroll of Protection' : '保护卷轴',
-        'Scroll of the Gods' : '神之卷轴',
+        'Scroll of Protection' : '守护卷轴',
+        'Scroll of the Gods' : '众神卷轴',
         'Crystal of Vigor' : '力量水晶',
         'Crystal of Finesse' : '灵巧水晶',
         'Crystal of Swiftness' : '敏捷水晶',
@@ -802,8 +889,8 @@ function loadItems(){
         'You gain +25% resistance to Dark elemental attacks and do 25% more damage with Dark magicks.' : '你获得 +25% 的黑暗魔法耐性且获得 25% 的额外黑暗魔法伤害。',
         //卷轴解释
         'Grants the Haste effect.' : '使用产生加速效果。',
-        'Grants the Protection effect.' : '使用产生保护效果。',
-        'Grants the Haste and Protection effects.with twice the normal duration.' : '产生加速和保护的效果。两倍持续时间',
+        'Grants the Protection effect.' : '使用产生守护效果。',
+        'Grants the Haste and Protection effects.with twice the normal duration.' : '产生加速和守护的效果。两倍持续时间',
         'Grants the Absorb effect.' : '使用后获得吸收效果。',
         'Grants the Shadow Veil effect.' : '使用产生闪避效果。',
         'Grants the Spark of Life effect.' : '使用产生生命火花效果。',
@@ -864,7 +951,7 @@ function loadItems(){
         'taken from the Invisible Pink Unicorn.' : ' ',
         'It doesn&amp;#039;t weigh anything and has the consistency of air' : '它很像空气一样轻，几乎没有重量',
         'but you&amp;#039;re quite sure it&amp;#039;s real' : '但是你很确定它是真实存在的',
-        'A nutritious pasta-based appendage from the Flying Spaghetti Monster.' : '一条用飞行意大利面怪物身上的面团做成的营养附肢。',
+        'A nutritious pasta-based appendage from the Flying Spaghetti Monster.' : '一条用飞天意面怪身上的面团做成的营养附肢。',
         'You found these in your Xmas stocking when you woke up. Maybe Snowflake will give you something for them.' : '你醒来时,在你的圣诞袜里发现这些东西。说不定用它可以和雪花女神交换礼物。',
         'This box is said to contain an item of immense power. You should get Snowflake to open it.' : '传说此盒子封印了一件拥有巨大力量的装备。你应该找雪花女神去打开它。',
         'A 1/10th scale figurine of Twilight Sparkle, the cutest, smartest, all-around best pony. According to Pinkie Pie, anyway.' : 'NO.1 暮光闪闪的 1/10 比例缩放公仔。最可爱、最聪明，最全能的小马。(根据萍琪的说法，嗯…) ',
@@ -909,10 +996,10 @@ function loadItems(){
         'Block Chance' : '(格挡率)',
         'Parry Chance' : '(招架率)',
         'Elemental Magic Proficiency' : '(元素熟练)',
-        'Divine Magic Proficiency' : '(圣熟练)',
-        'Forbidden Magic Proficiency' : '(暗熟练)',
-        'Deprecating Magic Proficiency' : '(减益熟练)',
-        'Supportive Magic Proficiency' : '(增益熟练)',
+        'Divine Magic Proficiency' : '(神授熟练)',
+        'Forbidden Magic Proficiency' : '(禁忌熟练)',
+        'Deprecating Magic Proficiency' : '(衰折熟练)',
+        'Supportive Magic Proficiency' : '(辅助熟练)',
         'Fire Spell Damage' : '(火焰法术伤害)',
         'Cold Spell Damage' : '(冰霜法术伤害)',
         'Elec Spell Damage' : '(闪电法术伤害)',
@@ -948,6 +1035,16 @@ function loadItems(){
         "'Artifact'" : "'文物'",
         "'Material'" : "'材料'",
         "'Collectable'" : "'收藏品'",
+
+        "Trophy Tier 1" : "1 级奖杯",
+        "Trophy Tier 2" : "2 级奖杯",
+        "Trophy Tier 3" : "3 级奖杯",
+        "Trophy Tier 4" : "4 级奖杯",
+        "Trophy Tier 5" : "5 级奖杯",
+        "Trophy Tier 6" : "6 级奖杯",
+        "Trophy Tier 7" : "7 级奖杯",
+        "Trophy Tier 8" : "8 级奖杯",
+        "Trophy Tier 9" : "9 级奖杯",
     };
 
     dictItems = new Map();
@@ -1046,10 +1143,10 @@ function loadEquipsInfo(){
 
         'Proficiency':'熟练度加成',
         '>Elemental ':'>元素 ',
-        'Divine':'神圣',
-        'Forbidden':'黑暗',
-        'Deprecating':'减益',
-        'Supportive':'增益',
+        'Divine':'神授',
+        'Forbidden':'禁忌',
+        'Deprecating':'衰折',
+        'Supportive':'辅助',
 
         'Primary Attributes':'属性加成',
         'Strength':'力量',
@@ -1115,25 +1212,31 @@ function loadEquips(){
     if (dictEquips) return dictEquips;
     //装备名
     var equips = {
+        'Cloth Armor': '布甲',
+        'Light Armor': '轻甲',
+        'Heavy Armor': '重甲',
+        'Shield &nbsp; &nbsp; Level': '盾牌 &nbsp; &nbsp; 等级',
+
         ///////////////////////////////////////////武器种类
         // 单手武器类
-        'Dagger':'*匕首（单）',
+        'Dagger':'*匕首(单)',
         'Sword Chucks' : '*锁链双剑（单）',
-        'Swordchucks' : '*锁链双剑（双）',
-        'Shortsword':'短剑（单）',
-        'Wakizashi':'脇差（单）',
-        'Axe':'斧（单）',
-        'Club':'棍（单）',
-        'Rapier':'<span style=\"background:#ffa500\" >西洋剑</span>（单）',
+        'Shortsword':'短剑(单)',
+        'Wakizashi':'脇差(单)',
+        'Axe':'斧(单)',
+        'Club':'棍(单)',
+        'Rapier':'<span style=\"background:#ffa500;color:black\">西洋剑</span>(单)',
         //双手
-        'Great Mace' : '重锤',
-        'Scythe':'*镰刀（双）',
-        'Longsword':'长剑（双）',
-        'Katana':'太刀（双）',
-        'Mace':'重槌（双）',
-        'Estoc':'刺剑（双）',
+        'Sword Chucks' : '*锁链双剑(双)',
+        'Great Mace' : '重锤(双)',
+        'Scythe':'*镰刀(双)',
+        'Longsword':'长剑(双)',
+        'Katana':'太刀(双)',
+        'Mace':'重槌(双)',
+        'Estoc':'刺剑(双)',
         //法杖
-        'Staff':'法杖',
+        'Staff':'法杖(双)',
+        ////////////////////////部位////////////////////////
         //布甲
         'Cap ':'兜帽 ',
         'Cap$':'兜帽',
@@ -1143,131 +1246,134 @@ function loadEquips(){
         'Gloves':'手套',
         'Pants':'短裤',
         'Shoes':'鞋',
-        //轻甲
+        //轻甲/重甲!
         'Helmet':'头盔',
-        'Breastplate':'护胸',
+        'Breastplate':'护胸', //轻甲
         'Gauntlets':'手甲',
-        'Leggings':'护腿',
-        //重甲
-        'Cuirass':'胸甲',
-        'Armor':'盔甲',
-        'Sabatons':'铁靴',
+        'Leggings':'护腿', // 轻甲
+        'Cuirass':'胸甲', // 板甲
+        'Armor':'盔甲', // 动力
+        'Sabatons':'铁靴', // 动力
         'Boots':'靴子',
-        'Greaves':'护胫',
+        'Greaves':'护胫', // 板甲
         //锁子甲
         'Coif' : '头巾',
         'Mitons' : '护手',
         'Hauberk' : '装甲',
         'Chausses' : '裤',
-
         /////////////////////////////盾或者材料,武器不会出现这个
+        //盾
         'Buckler':'圆盾',
         'Kite Shield':'鸢盾',
         'Tower Shield':'*塔盾',
-        'Force Shield':'<span style=\"background:#ffa500\" >力场盾</span>',
-
-        ////////////////////////材质前缀////////////////////////
+        'Force Shield':'<span style=\"background:#ffa500;color:black\" >力场盾</span>',
         //布甲
         'Cotton':'棉质<span style=\"background:#FFFFFF;color:#000000\" >(布)</span>',
         'Gossamer':'*薄纱<span style=\"background:#FFFFFF;color:#000000\" >(布)</span>',
         'Silk' : '*丝绸<span style=\"background:#FFFFFF;color:#000000\" >(布)</span>',
         'Ironsilk' : '*铁绸<span style=\"background:#FFFFFF;color:#000000\" >(布)</span>',
-        'Phase':'<span style=\"background:#ffa500\" >相位</span><span style=\"background:#FFFFFF;color:#000000\" >(布)</span>',
+        'Phase':'<span style=\"background:#ffa500;color:#000000\" >相位</span><span style=\"background:#FFFFFF;color:#000000\" >(布)</span>',
         //轻甲
         'Leather':'皮革<span style=\"background:#666666;color:#FFFFFF\" >(轻)</span>',
         'Kevlar':'*凯夫拉<span style=\"background:#666666;color:#FFFFFF\" >(轻)</span>',
         'Dragon Hide' : '*龙皮<span style=\"background:#666666;color:#FFFFFF\" >(轻)</span>',
         'Drakehide' : '*龙皮<span style=\"background:#666666;color:#FFFFFF\" >(轻)</span>',
-        'Shade':'<span style=\"background:#ffa500\" >暗影</span><span style=\"background:#666666;color:#FFFFFF\" >(轻)</span>',
+        'Shade':'<span style=\"background:#ffa500;color:black\" >暗影</span><span style=\"background:#666666;color:#FFFFFF\" >(轻)</span>',
         //重甲
         'Chainmail' : '*锁子甲<span style=\"background:#000000;color:#FFFFFF\" >(重)</span>',
         'Chain' : '*锁子甲<span style=\"background:#000000;color:#FFFFFF\" >(重)</span>',
         'Reactive' : '*反应装甲<span style=\"background:#000000;color:#FFFFFF\" >(重)</span>',
         'Plate':'板甲<span style=\"background:#000000;color:#FFFFFF\" >(重)</span>',
-        'Power':'<span style=\"background:#ffa500\" >动力</span><span style=\"background:#000000;color:#FFFFFF\" >(重)</span>',
+        'Power':'<span style=\"background:#ffa500;color:#000000\" >动力</span><span style=\"background:#000000;color:#FFFFFF\" >(重)</span>',
         //法杖
         'Ebony':'*乌木',
         'Redwood':'红木',
-        'Willow':'柳木',
+        'Willow':'<span style=\"background:#ffa500;color:black\">柳木</span>',
         'Oak':'橡木',
         'Katalox':'铁木',
-
-        ///////////////////////////////////////////防具后缀////////////////////////////////////////////
-        'of Negation':'否定',
-        'of the Shadowdancer':'影舞者',
-        'of the Arcanist':'奥术师',
-        'of the Fleet':'迅捷',
-        'of the Fire-eater':'噬火者',
-        'of the Thunder-child':'雷之子',
-        'of the Wind-waker':'风之杖',
-        'of the Frost-born':'冰人',
-        'of the Spirit-ward':'灵魂护佑',
-        'of the Thrice-blessed':'三重祝福',
-        'of the Stone-skinned':'硬皮',
-        'of Dampening':'抑制',
-        'of Stoneskin':'石肤',
-        'of Deflection':'偏转',
-        'of the Nimble':'招架',
-        'of the Barrier':'格挡',
-        'of Protection':'物防',
-        'of Warding':'魔防',
-
-        'of the Ox' :  '牛（力量）',
-        'of the Raccoon' :  '浣熊（灵巧）',
-        'of the Cheetah' :  '猎豹（敏捷）',
-        'of the Turtle' :  '乌龟（体质）',
-        'of the Fox' :  '狐狸（智力）',
-        'of the Owl' :  '猫头鹰（智慧）',
+              
+        ///////////////////////后缀////////////////////////
+        // 格挡武器/盾后缀
+        'of the Nimble': '灵活(招架)', // 棍/西洋剑/脇差/小圆盾
+        // 盾/防具后缀
+        'of Negation':'否定(抵抗)', // 暗影
+        'of the Shadowdancer':'影舞者(攻暴/回避)', // 暗影
+        'of the Arcanist':'奥术师(法命/双智)', // 暗影
+        'of the Fleet':'快速(回避)', // 暗影
+        'of the Fire-eater':'噬火者(火抗)',
+        'of the Thunder-child':'雷之子(雷抗)',
+        'of the Wind-waker':'驭风者(风抗)',
+        'of the Frost-born':'冰诞者(冰抗)',
+        'of the Spirit-ward':'幽冥结界(暗抗)',
+        'of the Thrice-blessed':'三重祝福(圣抗)',
+        'of the Stone-skinned':'硬肤者(免伤)',
+        'of Dampening':'抑制(免敲)',
+        'of Stoneskin':'石肤(免斩)', // !布甲
+        'of Deflection':'偏转(免刺)', // !布甲
+        'of the Barrier':'屏障(格挡)', // 小圆盾
+        'of Protection':'守护(物防)', // !暗影&!相位
+        'of Warding':'保卫(魔防)', // !暗影&!相位
+        
+        'of the Ox' :  '公牛(力量)',
+        'of the Raccoon' :  '浣熊(灵巧)',
+        'of the Cheetah' :  '猎豹(敏捷)',
+        'of the Turtle' :  '乌龟(体质)',
+        'of the Fox' :  '狐狸(智力)',
+        'of the Owl' :  '夜枭(智慧)',
         'of the Hulk' :  '浩克',
         'of the Shielding Aura' :  '守护光环',
 
-        ////////////////////////////////////////////////////武器后缀/////////////////////////////////
-        'of Slaughter':'<span style=\"background:#FF0000;color:#FFFFFF\" >杀戮</span>',
-        'of Swiftness':'加速',
-        'of Balance':'平衡',
-        'of the Battlecaster':'战法师',
-        'of the Banshee':'报丧女妖',
-        'of the Illithid':'灵吸怪',
-        'of the Vampire':'吸血鬼',
-        'of Destruction':'<span style=\"background:#9400d3;color:#FFFFFF\" >毁灭</span>',
-        'of Surtr':'<span style=\"background:#f97c7c\" >苏尔特（火伤）</span>',
-        'of Niflheim':'<span style=\"background:#94c2f5\" >尼芙菲姆（冰伤）</span>',
-        'of Mjolnir':'<span style=\"background:#f4f375\" >姆乔尔尼尔（雷伤）</span>',
-        'of Freyr':'<span style=\"background:#7ff97c\" >弗瑞尔（风伤）</span>',
-        'of Heimdall':'<span style=\"background:#ffffff\;color:#000000\" >海姆达（圣伤）</span>',
-        'of Fenrir':'<span style=\"background:#000000\;color:#ffffff" >芬里尔（暗伤）</span>',
-        'of Focus':'专注',
-        'of the Elementalist':'元素使',
-        'of the Heaven-sent':'天堂',
-        'of the Demon-fiend':'恶魔',
-        'of the Earth-walker':'地行者',
+        // 近战武器/动力后缀
+        'of Slaughter':'<span style=\"background:#FF0000;color:#FFFFFF\" >杀戮(攻伤)</span>',// 动力/近战
+        'of Swiftness':'迅捷(攻速)', // 单手!刺剑
+        'of Balance':'平衡(攻命/攻暴)', // 动力/!斧
+        'of the Battlecaster':'战法师(法命/魔耗/干涉)', // 单手/双手!斧!太刀/小圆盾
+        'of the Banshee':'报丧女妖(吸灵)', // 近战
+        'of the Illithid':'夺心魔(吸魔)', // 近战
+        'of the Vampire':'吸血鬼(吸血)', // 近战
+        // 法杖/布甲后缀
+        'of Destruction':'<span style=\"background:#9400d3;color:#FFFFFF\" >毁灭(法伤)</span>', // 柳木杖/铁木杖
+        'of Surtr':'<span style=\"background:#f97c7c;color:black\" >苏尔特(火伤)</span>', // 相位/红木杖
+        'of Niflheim':'<span style=\"background:#94c2f5;color:#5c5a5a\" >尼芙菲姆(冰伤)</span>', // 相位/红木杖
+        'of Mjolnir':'<span style=\"background:#f4f375;color:black\" >姆乔尔尼尔(雷伤)</span>', // 相位/红木杖
+        'of Freyr':'<span style=\"background:#7ff97c;color:#5c5a5a\" >弗瑞尔(风伤)</span>', // 相位/红木杖
+        'of Heimdall':'<span style=\"background:#ffffff\;color:#000000\" >海姆达(圣伤)</span>', // 相位/!柳木杖
+        'of Fenrir':'<span style=\"background:#000000\;color:#ffffff" >芬里尔(暗伤)</span>', // 相位/红木杖/铁木杖
+        'of Focus':'专注(法命/魔耗/法暴)', // 法杖
+        'of the Elementalist':'元素使(元素熟练)', // 棉制/!橡木杖
+        'of the Heaven-sent':'天堂(神授熟练)', // 棉制/铁木杖/橡木杖
+        'of the Demon-fiend':'恶魔(禁忌熟练)', // 棉制/柳木杖/铁木杖
+        'of the Earth-walker':'地行者(辅助熟练)', // 棉制/红木杖/橡木杖
         'of the Priestess':'牧师',
-        'of the Curse-weaver':'咒术师',
-
-        ///////////////武器或者防具属性/////////////////
-        'Radiant':'<span style=\"background:#ffffff\;color:#000000" >✪魔光✪</span>',
-        'Mystic':'神秘的',
-        'Charged':'<span style=\"color:red\" >充能的</span>',
-        'Amber':'<span style=\"background:#ffff00\;color:#9f9f16" >琥珀的（雷抗）</span>',
-        'Mithril':'<span style=\"color:red\" >秘银的</span>',
-        'Agile':'俊敏的',
-        'Zircon':'<span style=\"background:#ffffff\;color:#5c5a5a" >锆石的（圣抗）</span>',
-        'Frugal':'<span style=\"color:red\" >节能</span>',
-        'Jade':'<span style=\"background:#b1f9b1\" >翡翠的（风抗）</span>',
-        'Cobalt':'<span style=\"background:#a0f4f4\" >钴石的（冰抗）</span>',
-        'Ruby':'<span style=\"background:#ffa6a6\" >红宝石（火抗）</span>',
-        'Onyx':'<span style=\"background:#cccccc\" >缟玛瑙（暗抗）</span>',
-        'Savage':'<span style=\"color:red\" >野蛮的</span>',
-        'Reinforced':'加固的',
-        'Shielding':'盾化的',
-        'Arctic':'<span style=\"background:#94c2f5\" >极寒之</span>',
-        'Fiery':'<span style=\"background:#f97c7c\" >灼热之</span>',
-        'Shocking':'<span style=\"background:#f4f375\" >闪电之</span>',
-        'Tempestuous':'<span style=\"background:#7ff97c\" >风暴之</span>',
-        'Hallowed':'<span style=\"background:#ffffff\;color:#000000" >神圣之</span>',
-        'Demonic':'<span style=\"background:#000000\;color:#ffffff" >恶魔之</span>',
+        'of the Curse-weaver':'咒术师(衰折熟练)', // 棉制/!橡木杖
+        
+        ////////////////////////前缀////////////////////////
+        // 防具和盾前缀
+        'Radiant':'<span style=\"background:#ffffff\;color:#000000" >✪魔光的✪(法伤)</span>', // 相位
+        'Mystic':'神秘的(法暴伤)', // 相位
+        'Charged':'<span style=\"color:red\" >充能的(法速)</span>', // 布甲
+        'Amber':'<span style=\"background:#ffff00\;color:#9f9f16" >琥珀的(电抗)</span>',
+        'Mithril':'<span style=\"color:red\" >秘银的(低重)</span>', // 盾/板甲/动力
+        'Agile':'俊敏的(攻速)', // 盾/暗影/皮革
+        'Zircon':'<span style=\"background:#ffffff\;color:#5c5a5a" >锆石的(圣抗)</span>',
+        'Frugal':'<span style=\"color:red\" >节能的(省魔)</span>', // 布甲
+        'Jade':'<span style=\"background:#b1f9b1;color:black\">翡翠的(风抗)</span>',
+        'Cobalt':'<span style=\"background:#a0f4f4;color:black\">钴石的(冰抗)</span>',
+        'Ruby':'<span style=\"background:#ffa6a6;color:black\" 红宝石(火抗)</span>',
+        'Onyx':'<span style=\"background:#cccccc;color:black\">缟玛瑙(暗抗)</span>',
+        'Savage':'<span style=\"color:red\">残暴的(攻暴伤)</span>', // 暗影/动力
+        'Reinforced':'加固的(减伤)', // 盾/皮革
+        'Shielding':'盾化的(格挡)', // 板甲
+        // 武器前缀
+        'Arctic':'<span style=\"background:#94c2f5\;color:black">极寒之(冰)</span>',
+        'Fiery':'<span style=\"background:#f97c7c;color:black\">灼热之(火)</span>',
+        'Shocking':'<span style=\"background:#f4f375;color:black\">闪电之(雷)</span>',
+        'Tempestuous':'<span style=\"background:#7ff97c;color:#5c5a5a\">风暴之(风)</span>',
+        'Hallowed':'<span style=\"background:#ffffff\;color:#000000" >神圣之(圣)</span>',
+        'Demonic':'<span style=\"background:#000000\;color:#ffffff" >恶魔之(暗)</span>',
         'Ethereal':'<span style=\"background:#ffffff\;color:#5c5a5a" >虚空之</span>',
 
+        ////////////////////////旧版////////////////////////
         'Bronze ' : '铜 ',
         'Iron ' : '铁 ',
         'Silver ' : '银 ',
@@ -1291,16 +1397,16 @@ function loadEquips(){
         'Quintessential' : '第五元素',
 
         /////////////////品质//////////
-        'Flimsy ' : '薄弱 ',
-        'Crude ':'<span style=\"background:#acacac\" >劣质</span> ',
-        'Fair ':'<span style=\"background:#c1c1c1\" >一般</span> ',
-        'Average ':'<span style=\"background:#dfdfdf\" >中等</span> ',
-        'Superior ':'<span style=\"background:#fbf9f9\" >上等</span> ',
-        'Fine ':'<span style=\"background:#b9ffb9\" >优质</span> ',
-        'Exquisite':'<span style=\"background:#d7e698\" >✧精良✧</span>',
-        'Magnificent':'<span style=\"background:#a6daf6\" >☆史诗☆</span>',
-        'Legendary':'<span style=\"background:#ffbbff\" >✪传奇✪</span>',
-        'Peerless':'<span style=\"background:#ffd760\" >☯无双☯</span>',
+        'Flimsy' : '<span style=\"background:#848482;color:black\" >薄弱</span>',
+        'Crude':'<span style=\"background:#acacac;color:black\" >劣质</span>',
+        'Fair':'<span style=\"background:#c1c1c1;color:black\" >一般</span>',
+        'Average':'<span style=\"background:#dfdfdf;color:black\" >中等</span>',
+        'Superior':'<span style=\"background:#fbf9f9;color:black\" >上等</span>',
+        'Fine':'<span style=\"background:#b9ffb9;color:black\" >优质</span>',
+        'Exquisite':'<span style=\"background:#d7e698;color:black\" >✧精良✧</span>',
+        'Magnificent':'<span style=\"background:#a6daf6;color:black\" >☆史诗☆</span>',
+        'Legendary':'<span style=\"background:#ffbbff;color:black\" >✪传奇✪</span>',
+        'Peerless':'<span style=\"background:#ffd760;color:black\" >☯无双☯</span>',
 
         /////////////////装备部位，更换装备列表用的//////////
         'Empty':'空',
@@ -1345,7 +1451,7 @@ function loadExtra() {
         '([^a-z])Light([^a-z])':'$1轻$2',
         'Heavy':'重',
         //论坛里的彩虹无双品质名
-        'P(<[^<]+>)+e(<[^<]+>)+e(<[^<]+>)+r(<[^<]+>)+l(<[^<]+>)+e(<[^<]+>)+s(<[^<]+>)+s':'<span style=\"background:#ffd760\" >☯无双☯</span>',
+        'P(<[^<]+>)+e(<[^<]+>)+e(<[^<]+>)+r(<[^<]+>)+l(<[^<]+>)+e(<[^<]+>)+s(<[^<]+>)+s':'<span style=\"background:#ffd760;color:black\" >☯无双☯</span>',
 
         //照顾论坛的材料列表，为了避免误翻译到装备名，皮革和布料只匹配复数（完整物品名字物品字典里有）
         'Leathers': '皮革',
