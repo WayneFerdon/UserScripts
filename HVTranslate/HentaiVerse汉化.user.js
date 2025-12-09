@@ -3,16 +3,17 @@
 // @namespace      hentaiverse.org
 // @author         ggxxsol & NeedXuyao & mbbdzz & indefined & etc.
 // @icon           https://hentaiverse.org/y/favicon.png
-// @updateURL      https://sleazyfork.org/scripts/404118/code/script.meta.js
-// @downloadURL    https://sleazyfork.org/scripts/404118/code/script.user.js
+// @updateURL      https://github.com/WayneFerdon/UserScripts/raw/refs/heads/master/HVTranslate/HentaiVerse%E6%B1%89%E5%8C%96.user.js
+// @downloadURL    https://github.com/WayneFerdon/UserScripts/raw/refs/heads/master/HVTranslate/HentaiVerse%E6%B1%89%E5%8C%96.user.js
 // @description    基本完全汉化整个Hentaiverse文本，包括装备物品、界面说明和弹窗提示的汉化，带原文切换功能
 // @notice         完整汉化需要设置自定义字体：Hentaiverse主菜单 CHARACTER→SETTINGS 勾选自定义字体(Use Custom Font)并在下一行填上任意字体名称，拉到最下面点击Apply Changes
 // @notice         战斗页面仅翻译信息提示框，且默认不开启，如需开启战斗汉化在战斗界面中双击信息面板的提示
 // @notice         如与其它脚本共同运行冲突可尝试调整脚本运行顺序将汉化脚本放到最后，但无法保证完全兼容
 // @include        *://hentaiverse.org/*
 // @include        *://alt.hentaiverse.org/*
-// @version        2025.12.02.1
+// @version        2025.12.02.1.a
 // @grant none
+// @run-at         document-end
 // ==/UserScript==
 (function () {
     'use strict';
@@ -93,9 +94,9 @@
         //战斗页面的翻译元素，即使已经写了字典脚本默认也不会翻译战斗页面，需要双击战斗下方经验条开启
         '#infopane' : [true, 'battling', 'skills'], //战斗提示信息面板
         //以下几个面板翻译会和Monsterbation冲突，且切换翻译需要刷新页面才会生效
-        //'#table_skills' : [true, 'skills'], //战斗技能面板
-        //'#table_magic' : [true, 'skills'], //战斗法术面板
-        //'#pane_item' : [true, 'battling'], //战斗物品面板
+        '#table_skills' : [true, 'skills'], //战斗技能面板
+        '#table_magic' : [true, 'skills'], //战斗法术面板
+        '#pane_item' : [true, 'battling'], //战斗物品面板
     };
 
 
@@ -529,7 +530,8 @@ var words = {
         'crushing' : '敲击',
         'piercing' : '刺击',
         'slashing' : '斩击',
-        '(void)' : '(虚空)',
+        '\(void': '(虚空',
+        'void\)' : '虚空)',
 
         'Mainhand Attack': '主手攻击',
         'Offhand Attack': '副手攻击',
@@ -1925,21 +1927,21 @@ var words = {
         'Katalox' : '铁木',
         'Ebony':'乌木',
         //单手武器
-        'Axe' : '斧',
-        'Club' : '棍',
-        'Rapier' : '西洋剑',
-        'Shortsword' : '短剑',
-        'Wakizashi' : '脇差',
-        'Sword Chucks' : '*锁链双剑',
-        'Dagger' : '匕首',
+        'Axe' : '斧(单)',
+        'Club' : '棍(单)',
+        'Rapier' : '西洋剑(单)',
+        'Shortsword' : '短剑(单)',
+        'Wakizashi' : '脇差(单)',
+        'Sword Chucks' : '*锁链双剑(单)',
+        'Dagger' : '匕首(单)',
         //双手武器
-        'Great Mace' : '重锤',
-        'Swordchucks' : '锁链双剑',
-        'Mace' : '重锤',
-        'Estoc' : '刺剑',
-        'Longsword' : '长剑',
-        'Katana' : '日本刀',
-        'Scythe' : '镰刀',
+        'Great Mace' : '重锤(双)',
+        'Swordchucks' : '锁链双剑(双)',
+        'Mace' : '重锤(双)',
+        'Estoc' : '刺剑(双)',
+        'Longsword' : '长剑(双)',
+        'Katana' : '日本刀(双)',
+        'Scythe' : '镰刀(双)',
         //盾类型
         'Buckler' : '小圆盾',
         'Kite Shield' : '鸢盾',
@@ -1983,7 +1985,7 @@ var words = {
         'Sabatons' : '铁靴',
         'Helmet' : '头盔',
         '动力 Armor' : '动力 盔甲',
-        '/(?<!Penetrated) Armor$/' : ' 护甲',
+        // '/(?<!Penetrated) Armor$/' : ' 护甲',
 
         //前缀
         'Ethereal' : '虚空',
@@ -1994,7 +1996,7 @@ var words = {
         'Hallowed' : '圣光(圣)',
         'Demonic' : '魔性(暗)',
         'Reinforced' : '坚固的（减伤）',
-        'Radiant' : '魔光的（魔伤）',
+        'Radiant' : '✪魔光✪（魔伤）',
         'Mystic' : '神秘的（暴击）',
         'Charged' : '充能的（加速）',
         'Amber' : '琥珀的（雷抗）',
@@ -2026,56 +2028,55 @@ var words = {
         '-tipped' : '-前端',
         'Astral' : '五芒星',
         'Quintessential' : '第五元素',
-
         //后缀
-        'of Slaughter' : '杀戮',
-        'of Balance' : '平衡',
-        'of Swiftness' : '迅捷',
-        'of the Vampire' : '吸血鬼',
-        'of the Illithid' : '灵吸怪',
-        'of the Banshee' : '报丧女妖',
-        'of the Nimble' : '招架',
-        'of the Battlecaster' : '战法师',
-        'of Destruction' : '毁灭',
-        'of Focus' : '专注',
-        'of Surtr' : '苏尔特（火伤）',
-        'of Niflheim' : '尼芙菲姆（冰伤）',
-        'of Mjolnir' : '姆乔尔尼尔（雷伤）',
-        'of Freyr' : '弗瑞尔（风伤）',
-        'of Heimdall' : '海姆达（圣伤）',
-        'of Fenrir' : '芬里尔（暗伤）',
-        'of the Elementalist' : '元素使',
-        'of the Heaven-sent' : '天堂',
-        'of the Demon-fiend' : '恶魔',
-        'of the Earth-walker' : '地行者',
-        'of the Curse-weaver' : '咒术师',
-        'of the Barrier' : '格挡',
-        'of Warding' : '魔防',
-        'of Protection' : '物防',
-        'of Dampening' : '抑制',
-        'of Stoneskin' : '石肤',
-        'of Deflection' : '偏转',
-        'of the Shadowdancer' : '影舞者',
-        'of the Arcanist' : '奥术师',
-        'of the Fleet' : '迅捷',
-        'of Negation' : '否定',
+        'of Slaughter' : '杀戮(攻伤)',
+        'of Balance' : '平衡(攻命/攻暴)',
+        'of Swiftness' : '快速(攻速)',
+        'of the Vampire' : '吸血鬼(吸血)',
+        'of the Illithid' : '夺心魔(吸魔)',
+        'of the Banshee' : '报丧女妖(吸灵)',
+        'of the Nimble' : '灵活(招架)',
+        'of the Battlecaster' : '战法师(法命/魔耗/干涉)',
+        'of Destruction' : '毁灭(法伤)',
+        'of Focus' : '专注(法命/魔耗/法暴)',
+        'of Surtr' : '苏尔特(火伤)',
+        'of Niflheim' : '尼芙菲姆(冰伤)',
+        'of Mjolnir' : '姆乔尔尼尔(雷伤)',
+        'of Freyr' : '弗瑞尔(风伤)',
+        'of Heimdall' : '海姆达(圣伤)',
+        'of Fenrir' : '芬里尔(暗伤)',
+        'of the Elementalist' : '元素使(元素熟练)',
+        'of the Heaven-sent' : '天堂(神圣熟练)',
+        'of the Demon-fiend' : '恶魔(黑暗熟练)',
+        'of the Earth-walker' : '地行者(增益熟练)',
+        'of the Curse-weaver' : '咒术师(减益熟练)',
+        'of the Barrier' : '屏障(格挡)',
+        'of Warding' : '保卫(魔防)',
+        'of Protection' : '保护(物防)',
+        'of Dampening' : '抑制(免敲)',
+        'of Stoneskin' : '石肤(免斩)',
+        'of Deflection' : '偏转(免刺)',
+        'of the Shadowdancer' : '影舞者(攻暴/回避)',
+        'of the Arcanist' : '奥术师(法命/双智)',
+        'of the Fleet' : '迅捷(回避)',
+        'of Negation' : '否定(抵抗)',
         //旧装备后缀
         'of the Priestess' : '牧师',
         'of the Hulk' : '浩克',
-        'of the 盾化的（格挡） Aura' : '守护光环', //Shielding Aura
-        'of the Ox' : '牛（力量）',
-        'of the Raccoon' : '浣熊（灵巧）',
-        'of the Cheetah' : '猎豹（敏捷）',
-        'of the Turtle' : '乌龟（体质）',
-        'of the Fox' : '狐狸（智力）',
-        'of the Owl' : '猫头鹰（智慧）',
-        'of the Stone-skinned' : '硬皮（减伤）',
-        'of the Fire-eater' : '吞火者（火抗）',
-        'of the Frost-born' : '冰人（冰抗）',
-        'of the Thunder-child' : '雷之子（雷抗）',
-        'of the Wind-waker' : '驭风者（风抗）',
-        'of the Thrice-blessed' : '三重祝福（圣抗）',
-        'of the Spirit-ward' : '幽冥结界（暗抗）',
+        'of the 盾化的(格挡) Aura' : '守护光环', //Shielding Aura
+        'of the Ox' : '公牛(力量)',
+        'of the Raccoon' : '浣熊(灵巧)',
+        'of the Cheetah' : '猎豹(敏捷)',
+        'of the Turtle' : '乌龟(体质)',
+        'of the Fox' : '狐狸(智力)',
+        'of the Owl' : '夜枭(智慧)',
+        'of the Stone-skinned' : '硬肤者(免伤)',
+        'of the Fire-eater' : '噬火者(火抗)',
+        'of the Frost-born' : '冰诞者(冰抗)',
+        'of the Thunder-child' : '雷之子(雷抗)',
+        'of the Wind-waker' : '驭风者(风抗)',
+        'of the Thrice-blessed' : '三重祝福(圣抗)',
+        'of the Spirit-ward' : '幽冥结界(暗抗)',
 
     },
 
@@ -2085,54 +2086,54 @@ var words = {
     equipsSuffix: {
         //独立装备信息页面中装备名可能会分行导致无法匹配完整后缀，此处做特殊处理补充
         //为防止错误匹配其它单词，使用结尾正则表达式仅匹配后缀
-        '/Slaughter$/' : '杀戮',
-        '/Balance$/' : '平衡',
-        '/Swiftness$/' : '迅捷',
-        '/Vampire$/' : '吸血鬼',
-        '/Illithid$/' : '灵吸怪',
-        '/Banshee$/' : '报丧女妖',
-        '/Nimble$/' : '招架',
-        '/Battlecaster$/' : '战法师',
-        '/Destruction$/' : '毁灭',
-        '/Focus$/' : '专注',
-        '/Surtr$/' : '苏尔特（火伤）',
-        '/Niflheim$/' : '尼芙菲姆（冰伤）',
-        '/Mjolnir$/' : '姆乔尔尼尔（雷伤）',
-        '/Freyr$/' : '弗瑞尔（风伤）',
-        '/Heimdall$/' : '海姆达（圣伤）',
-        '/Fenrir$/' : '芬里尔（暗伤）',
-        '/Elementalist$/' : '元素使',
-        '/Heaven-sent$/' : '天堂',
-        '/Demon-fiend$/' : '恶魔',
-        '/Earth-walker$/' : '地行者',
-        '/Curse-weaver$/' : '咒术师',
-        '/Barrier$/' : '格挡',
-        '/Warding$/' : '魔防',
-        '/Protection$/' : '物防',
-        '/Dampening$/' : '抑制',
-        '/Stoneskin$/' : '石肤',
-        '/Deflection$/' : '偏转',
-        '/Shadowdancer$/' : '影舞者',
-        '/Arcanist$/' : '奥术师',
-        '/Fleet$/' : '迅捷',
-        '/Negation$/' : '否定',
+        '/Slaughter$/' : '杀戮(攻伤)',
+        '/Balance$/' : '平衡(攻命/攻暴)',
+        '/Vampire$/' : '吸血鬼(吸血)',
+        '/Illithid$/' : '夺心魔(吸魔)',
+        '/Banshee$/' : '报丧女妖(吸灵)',
+        '/Swiftness$/' : '快速(攻速)',
+        '/Nimble$/' : '灵活(招架)',
+        '/Battlecaster$/' : '战法师(法命/魔耗/干涉)',
+        '/Destruction$/' : '毁灭(法伤)',
+        '/Focus$/' : '专注(法命/魔耗/法暴)',
+        '/Surtr$/' : '苏尔特(火伤)',
+        '/Niflheim$/' : '尼芙菲姆(冰伤)',
+        '/Mjolnir$/' : '姆乔尔尼尔(雷伤)',
+        '/Freyr$/' : '弗瑞尔(风伤)',
+        '/Heimdall$/' : '海姆达(圣伤)',
+        '/Fenrir$/' : '芬里尔(暗伤)',
+        '/Elementalist$/' : '元素使(元素熟练)',
+        '/Heaven-sent$/' : '天堂(神圣熟练)',
+        '/Demon-fiend$/' : '恶魔(黑暗熟练)',
+        '/Earth-walker$/' : '地行者(增益熟练)',
+        '/Curse-weaver$/' : '咒术师(减益熟练)',
+        '/Barrier$/' : '屏障(格挡)',
+        '/Warding$/' : '保卫(魔防)',
+        '/Protection$/' : '保护(物防)',
+        '/Dampening$/' : '抑制(免敲)',
+        '/Stoneskin$/' : '石肤(免斩)',
+        '/Deflection$/' : '偏转(免刺)',
+        '/Shadowdancer$/' : '影舞者(物暴/回避)',
+        '/Arcanist$/' : '奥术师(魔命/双智)',
+        '/Fleet$/' : '迅捷(回避)',
+        '/Negation$/' : '否定(抵抗)',
         //部分旧装备后缀
         '/Priestess$/' : '牧师',
         '/Hulk$/' : '浩克',
-        '/盾化的（格挡） Aura$/' : '守护光环', //Shielding Aura
-        '/Ox$/' : '牛（力量）',
-        '/Raccoon$/' : '浣熊（灵巧）',
-        '/Cheetah$/' : '猎豹（敏捷）',
-        '/Turtle$/' : '乌龟（体质）',
-        '/Fox$/' : '狐狸（智力）',
-        '/Owl$/' : '猫头鹰（智慧）',
-        '/Stone-skinned$/' : '硬皮（减伤）',
-        '/Fire-eater$/' : '吞火者（火抗）',
-        '/Frost-born$/' : '冰人（冰抗）',
-        '/Thunder-child$/' : '雷之子（雷抗）',
-        '/Wind-waker$/' : '驭风者（风抗）',
-        '/Thrice-blessed$/' : '三重祝福（圣抗）',
-        '/Spirit-ward$/' : '幽冥结界（暗抗）',
+        '/盾化的(格挡) Aura$/' : '守护光环', //Shielding Aura
+        '/Ox$/' : '公牛(力量)',
+        '/Raccoon$/' : '浣熊(灵巧)',
+        '/Cheetah$/' : '猎豹(敏捷)',
+        '/Turtle$/' : '乌龟(体质)',
+        '/Fox$/' : '狐狸(智力)',
+        '/Owl$/' : '夜枭(智慧)',
+        '/Stone-skinned$/' : '硬肤者(免伤)',
+        '/Fire-eater$/' : '噬火者(火抗)',
+        '/Frost-born$/' : '冰诞者(冰抗)',
+        '/Thunder-child$/' : '雷之子(雷抗)',
+        '/Wind-waker$/' : '驭风者(风抗)',
+        '/Thrice-blessed$/' : '三重祝福(圣抗)',
+        '/Spirit-ward$/' : '幽冥结界(暗抗)',
 
         //处理词缀。应该避免在没有必要的地方使用此字典，以免处理掉其它正常句子的词缀
         ' of ' : ' ',
