@@ -24,6 +24,48 @@
 if (document.location.href.match(/ss=iw/)&&!document.getElementById('item_pane'))return
 if (document.getElementById('riddlemaster')||document.getElementById('textlog')) return;
 
+
+var tagsWhitelist = ['TEXTAREA','SCRIPT','STYLE'],
+    rIsRegexp = /^\/(.+)\/([gim]+)?$/;
+//执行查找的xpath表达式，查找目标元素下的所有文本
+var pathExpre = new XPathEvaluator().createExpression('.//text()[ normalize-space(.) != "" ]', null);
+
+// prepareRegex by JoeSimmons
+// used to take a string and ready it for use in new RegExp()
+function prepareRegex(string) {
+  return string.replace(/([\[\]\^\&\$\.\(\)\?\/\\\+\{\}\|])/g, '\\$1');
+}
+// function to decide whether a parent tag will have its text replaced or not
+  function isTagOk(tag) {
+  return !tagsWhitelist.includes(tag);
+}
+
+// 翻译文本，使用指定字典对指定元素下的所有文字进行翻译
+// elem: 待翻译的页面元素, dict: 使用的翻译字典, dynamic: 是否动态元素
+// 动态元素将不会检查内容直接翻译
+function translateText(elem, dict, dynamic) {
+  if (!elem || !dict) return;
+  var texts = pathExpre.evaluate(elem, XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE, null);
+  for (var i = 0, text; text = texts.snapshotItem(i); i += 1) {
+    //console.log(text.parentNode.tagName)
+    if (dynamic || isTagOk(text.parentNode.tagName) ) {
+      var temp = text.data;
+      for(var item of dict){
+        // temp = temp.replace(item.reg, item.value);
+        temp = temp.replace(item[0], item[1]);
+      }
+      if(temp!=text.data) {
+        if (!translatedList.has(text)) {
+          translatedList.set(text, {data: text.data});
+        }
+        // text.data = temp;
+        text.parentNode.innerHTML = temp;
+        // console.log(text.parentNode, temp);
+      }
+    }
+  }
+}
+
 // 切换原文使用的变量
 var translatedList = new Map(), translated = true, changer;
 
@@ -372,6 +414,7 @@ function initRestore() {
  * 参数 dicts: 翻译字典，一个Map，key值为匹配表达式，value为翻译结果。
  */
 function translate(target, dicts) {
+  return translateText(target, dicts, false)
     if (!target || !dicts) return;
     let html, isElem = target instanceof Element;
     if (isElem) {
@@ -383,9 +426,9 @@ function translate(target, dicts) {
     for (var dict of dicts){ //遍历字典并翻译
         html = html.replace(dict[0], dict[1]);
     }
-    if (isElem) { if (html !== result) {
+    if (isElem) {
         target.innerHTML = html;
-    }   return target;
+        return target;
     }
     else return result;
 }
