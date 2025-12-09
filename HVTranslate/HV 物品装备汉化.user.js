@@ -12,14 +12,13 @@
 // @notice       如与其它脚本同时使用冲突，可尝试调整脚本运行顺序，但无法保证完全兼容，或者将冲突的页面链接添加用户排除(@exclude)
 // @notice       如果你要在论坛买东西，挑好东西之后最好切换到原文再复制内容，因为别人并不一定看得懂经过翻译过后的东西
 // @icon         https://hentaiverse.org/y/favicon.png
-// @include      *://hentaiverse.org/*
-// @include      *://alt.hentaiverse.org/*
-// @exclude      *://*hentaiverse.org/*equip/*
+// @include      *://*hentaiverse.org/*
 // @exclude      *://*hentaiverse.org/*pages/showequip.php?*
 // @include      *://forums.e-hentai.org/*showtopic=*
 // @include      *://hvmarket.xyz/*
 // @include      *://reasoningtheory.net/*
-// @version      2025.11.13
+// @version      2025.11.13.a
+// @run-at         document-end
 // ==/UserScript==
 
 if (document.location.href.match(/ss=iw/)&&!document.getElementById('item_pane'))return
@@ -33,7 +32,68 @@ var translatedList = new Map(), translated = true, changer;
 // 否则需要先调用loadItems/loadEquips/loadEquipsInfo/loadExtra加载对应字典之后才能使用translate方法
 var dictItems, dictEquips, dictEquipsInfo, dictExtra;
 
+const loaded = {};
+if (document.location.href.match(/\/equip\//)) { // isEquPop
+    setTimeout(main, 5000);
+}
+else {
 main();//执行汉化
+}
+
+function translateOnLoaded(selector, loadingText, method = undefined, selectorTrans = undefined) {
+    method = method ?? translateEquips;
+    if (loadingText) { // Type 1 : 通过加载中的文本判断
+        //查找页面元素并调用翻译
+        const all = document.querySelectorAll(selector);
+        if (!all) return;
+        for (let i = 0; i < all.length; i++) {
+            if (all[i].innerHTML.includes(loadingText)) {
+                setTimeout(() => translateOnLoaded(selector, loadingText, method, selectorTrans), 100);
+                return;
+            }
+        }
+        method(selectorTrans ?? selector);
+        return;
+    }
+    // Type 2 : 通过监听元素到变化停止
+    function onDone(selector, method) {
+        if (loaded[selector][1] === loaded[selector][0]) {
+            method(selector);
+            return;
+        }
+        loaded[selector][1] = loaded[selector][0];
+        setTimeout(_ => onDone(selector), 2000);
+    }
+
+    const observer = new MutationObserver((mutations, observer) => {
+        if (!translated) return;
+        mutations.forEach(mutation => {
+            loaded[selector][0] += 1 + mutation.addedNodes.length;
+        });
+    });
+    loaded[selector] = [0, undefined];
+    setTimeout(_ => onDone(selector, method), 2000);
+    Array.from(document.querySelectorAll(selector)).forEach(elem => observer.observe(elem, { subtree: true, childList: true, attribute: true, attributeFilter: ['value', 'title'] })); //监听翻译动态内容
+}
+
+function translateOnChange(selector, method = undefined, translateSelector = undefined) {
+    method ??= translateEquips;
+    translateSelector ??= selector;
+    const observer = new MutationObserver((mutations, observer) => {
+        if (!translated) return;
+        mutations.forEach(mutation => {
+            const nodes = Array.from(mutation.addedNodes);
+            nodes.push(mutation.target);
+            nodes.forEach(node => {
+                if (!node instanceof Element) return;
+                method(translateSelector);
+                node => observer.observe(node, { subtree: true, childList: true, attribute: true, attributeFilter: ['value', 'title'] });
+            })
+        });
+    });
+    method(translateSelector);
+    Array.from(document.querySelectorAll(selector)).forEach(elem => observer.observe(elem, { subtree: true, childList: true, attribute: true, attributeFilter: ['value', 'title'] })); //监听翻译动态内容
+}
 
 function main(){
     var lklist = [
@@ -56,6 +116,17 @@ function main(){
         'Bazaar&ss=mk', //交易市场16
         'Bazaar&ss=am', //武器17
     ];
+
+    translateOnChange('#popup_box');
+    translateOnLoaded('.eqshop_pane #item_pane,.eqshop_pane #shop_pane,#inv_equip,#inv_eqstor', 'hvut-eq-loading', undefined, '.eqp>div:last-child,.hvut-eq-category,.hvut-eq-type');
+    translateOnLoaded('.hvut-bt-equip>li', '...', undefined, '.hvut-bt-equip>li>a');
+    translateOnLoaded('.hvut-bt-equip>li', '...', translateItems, '.hvut-bt-equip>li>span');
+    translateOnChange('.hvut-bt-enchant', translateItems);
+    translateOnChange('.hvut-bt-repair', translateItems);
+    translateOnChange('.hvut-bt-repairall', translateItems);
+    translateOnChange('.hvut-bt-inventory,.hvut-bt-items', translateItems);
+    translateOnLoaded('#hvut-bottom>.hvut-lt-div', '加载中');
+
     var location;
     for(location = 0; location < lklist.length; location++){
         // 匹配当前网址位置，lklist里面的网址顺序和下面case对应，更改顺序需要同时更改case
@@ -78,6 +149,10 @@ function main(){
             translateItems(".itemlist>tbody>tr>td>div");
             translateItems(".sa>div:last-child>div");
             //*/
+            translateOnChange('.hvut-ss-results', translateItems, '.hvut-ss-ul>li>span');
+            translateOnChange('.hvut-ss-results', translateEquips, '.hvut-ss-ul>li>*,.hvut-ss-ul>li.hvut-ss-equip');
+            translateOnChange('.hvut-ss-log', translateItems, '.hvut-ss-p,.hvut-ss-ul>li>span');
+            translateOnChange('.hvut-ss-log', translateEquips, '.hvut-ss-p,.hvut-ss-ul>li>*');
             break;
 
         case 4: //装备仓库
@@ -87,9 +162,13 @@ function main(){
             break;
 
         case 7: //装备店
-            translateEquipsList();
+        // translateEquipsList();
             var equipdiv, i;
+            if (document.querySelector('.switchEquHide')) {
+                break;
+            }
             var equhide = document.createElement('span');
+            equhide.classList.add('switchEquHide');
             equhide.style.cssText = "cursor: pointer;z-index: 1000;font-size: 16px;position: fixed;top: 180px;left: 0px;color: red;background: black;user-select: none;";
             try{
                 if(!localStorage.hideflag) localStorage.hideflag = "隐藏锁定装备";
@@ -300,14 +379,15 @@ function translate(target, dicts) {
         if (!translatedList.has(target)) translatedList.set(target, html); //保存原文
     }
     else html = target;
+    const result = html;
     for (var dict of dicts){ //遍历字典并翻译
         html = html.replace(dict[0], dict[1]);
     }
-    if (isElem) {
+    if (isElem) { if (html !== result) {
         target.innerHTML = html;
-        return target;
+    }   return target;
     }
-    else return html;
+    else return result;
 }
 
 //翻译Hentaiverse内装备列表
@@ -1117,25 +1197,32 @@ function loadEquips(){
     if (dictEquips) return dictEquips;
     //装备名
     var equips = {
+        'One-handed Weapon': '单手武器',
+        'Two-handed Weapon': '双手武器',
+        '^Shield$': '盾牌',
+        'Cloth Armor': '布甲',
+        'Light Armor': '轻甲',
+        'Heavy Armor': '重甲',
+
         ///////////////////////////////////////////武器种类
         // 单手武器类
-        'Dagger':'*匕首（单）',
+        'Dagger':'*匕首(单)',
         'Sword Chucks' : '*锁链双剑（单）',
         'Swordchucks' : '*锁链双剑（双）',
-        'Shortsword':'短剑（单）',
-        'Wakizashi':'脇差（单）',
-        'Axe':'斧（单）',
-        'Club':'棍（单）',
-        'Rapier':'<span style=\"background:#ffa500\" >西洋剑</span>（单）',
+        'Shortsword':'短剑(单)',
+        'Wakizashi':'脇差(单)',
+        'Axe':'斧(单)',
+        'Club':'棍(单)',
+        'Rapier':'<span style=\"background:#ffa500\" >西洋剑</span>(单)',
         //双手
-        'Great Mace' : '重锤',
-        'Scythe':'*镰刀（双）',
-        'Longsword':'长剑（双）',
-        'Katana':'太刀（双）',
-        'Mace':'重槌（双）',
-        'Estoc':'刺剑（双）',
+        'Great Mace' : '重锤(双)',
+        'Scythe':'*镰刀(双)',
+        'Longsword':'长剑(双)',
+        'Katana':'太刀(双)',
+        'Mace':'重槌(双)',
+        'Estoc':'刺剑(双)',
         //法杖
-        'Staff':'法杖',
+        'Staff':'法杖(双)',
         //布甲
         'Cap ':'兜帽 ',
         'Cap$':'兜帽',
@@ -1152,7 +1239,7 @@ function loadEquips(){
         'Leggings':'护腿',
         //重甲
         'Cuirass':'胸甲',
-        'Armor':'盔甲',
+        'Power Armor':'<span style=\"background:#ffa500\" >动力</span><span style=\"background:#000000;color:#FFFFFF\" >(重)</span> 盔甲',
         'Sabatons':'铁靴',
         'Boots':'靴子',
         'Greaves':'护胫',
@@ -1190,78 +1277,78 @@ function loadEquips(){
         //法杖
         'Ebony':'*乌木',
         'Redwood':'红木',
-        'Willow':'柳木',
+        'Willow':'<span style=\"background:#ffa500\">柳木</span>',
         'Oak':'橡木',
         'Katalox':'铁木',
 
         ///////////////////////////////////////////防具后缀////////////////////////////////////////////
-        'of Negation':'否定',
-        'of the Shadowdancer':'影舞者',
-        'of the Arcanist':'奥术师',
-        'of the Fleet':'迅捷',
-        'of the Fire-eater':'噬火者',
-        'of the Thunder-child':'雷之子',
-        'of the Wind-waker':'风之杖',
-        'of the Frost-born':'冰人',
-        'of the Spirit-ward':'灵魂护佑',
-        'of the Thrice-blessed':'三重祝福',
-        'of the Stone-skinned':'硬皮',
-        'of Dampening':'抑制',
-        'of Stoneskin':'石肤',
-        'of Deflection':'偏转',
-        'of the Nimble':'招架',
-        'of the Barrier':'格挡',
-        'of Protection':'物防',
-        'of Warding':'魔防',
+        'of Negation':'否定(抵抗)',
+        'of the Shadowdancer':'影舞者(攻暴/回避)',
+        'of the Arcanist':'奥术师(法命/双智)',
+        'of the Fleet':'迅捷(回避)',
+        'of the Fire-eater':'噬火者(火抗)',
+        'of the Thunder-child':'雷之子(雷抗)',
+        'of the Wind-waker':'驭风者(风抗)',
+        'of the Frost-born':'冰诞者(冰抗)',
+        'of the Spirit-ward':'幽冥结界(暗抗)',
+        'of the Thrice-blessed':'三重祝福(圣抗)',
+        'of the Stone-skinned':'硬肤者(免伤)',
+        'of Dampening':'抑制(免敲)',
+        'of Stoneskin':'石肤(免斩)',
+        'of Deflection':'偏转(免刺)',
+        'of the Nimble':'灵活(招架)',
+        'of the Barrier':'屏障(格挡)',
+        'of Protection':'守护(物防)',
+        'of Warding':'保卫(魔防)',
 
-        'of the Ox' :  '牛（力量）',
-        'of the Raccoon' :  '浣熊（灵巧）',
-        'of the Cheetah' :  '猎豹（敏捷）',
-        'of the Turtle' :  '乌龟（体质）',
-        'of the Fox' :  '狐狸（智力）',
-        'of the Owl' :  '猫头鹰（智慧）',
+        'of the Ox' :  '公牛(力量)',
+        'of the Raccoon' :  '浣熊(灵巧)',
+        'of the Cheetah' :  '猎豹(敏捷)',
+        'of the Turtle' :  '乌龟(体质)',
+        'of the Fox' :  '狐狸(智力)',
+        'of the Owl' :  '夜枭(智慧)',
         'of the Hulk' :  '浩克',
         'of the Shielding Aura' :  '守护光环',
 
         ////////////////////////////////////////////////////武器后缀/////////////////////////////////
-        'of Slaughter':'<span style=\"background:#FF0000;color:#FFFFFF\" >杀戮</span>',
-        'of Swiftness':'加速',
-        'of Balance':'平衡',
-        'of the Battlecaster':'战法师',
-        'of the Banshee':'报丧女妖',
-        'of the Illithid':'灵吸怪',
-        'of the Vampire':'吸血鬼',
-        'of Destruction':'<span style=\"background:#9400d3;color:#FFFFFF\" >毁灭</span>',
-        'of Surtr':'<span style=\"background:#f97c7c\" >苏尔特（火伤）</span>',
-        'of Niflheim':'<span style=\"background:#94c2f5\" >尼芙菲姆（冰伤）</span>',
-        'of Mjolnir':'<span style=\"background:#f4f375\" >姆乔尔尼尔（雷伤）</span>',
-        'of Freyr':'<span style=\"background:#7ff97c\" >弗瑞尔（风伤）</span>',
-        'of Heimdall':'<span style=\"background:#ffffff\;color:#000000\" >海姆达（圣伤）</span>',
-        'of Fenrir':'<span style=\"background:#000000\;color:#ffffff" >芬里尔（暗伤）</span>',
-        'of Focus':'专注',
-        'of the Elementalist':'元素使',
-        'of the Heaven-sent':'天堂',
-        'of the Demon-fiend':'恶魔',
-        'of the Earth-walker':'地行者',
+        'of Slaughter':'<span style=\"background:#FF0000;color:#FFFFFF\" >杀戮(攻伤)</span>',
+        'of Swiftness':'快速(攻速)',
+        'of Balance':'平衡(攻命/攻暴)',
+        'of the Battlecaster':'战法师(法命/魔耗/干涉)',
+        'of the Banshee':'报丧女妖(吸灵)',
+        'of the Illithid':'夺心魔(吸魔)',
+        'of the Vampire':'吸血鬼(吸血)',
+        'of Destruction':'<span style=\"background:#9400d3;color:#FFFFFF\" >毁灭(法伤)</span>',
+        'of Surtr':'<span style=\"background:#f97c7c\" >苏尔特(火伤)</span>',
+        'of Niflheim':'<span style=\"background:#94c2f5\" >尼芙菲姆(冰伤)</span>',
+        'of Mjolnir':'<span style=\"background:#f4f375\" >姆乔尔尼尔(雷伤)</span>',
+        'of Freyr':'<span style=\"background:#7ff97c\" >弗瑞尔(风伤)</span>',
+        'of Heimdall':'<span style=\"background:#ffffff\;color:#000000\" >海姆达(圣伤)</span>',
+        'of Fenrir':'<span style=\"background:#000000\;color:#ffffff" >芬里尔(暗伤)</span>',
+        'of Focus':'专注(法命/魔耗/法暴)',
+        'of the Elementalist':'元素使(元素熟练)',
+        'of the Heaven-sent':'天堂(神授熟练)',
+        'of the Demon-fiend':'恶魔(禁忌熟练)',
+        'of the Earth-walker':'地行者(辅助熟练)',
         'of the Priestess':'牧师',
-        'of the Curse-weaver':'咒术师',
+        'of the Curse-weaver':'咒术师(衰折熟练)',
 
         ///////////////武器或者防具属性/////////////////
-        'Radiant':'<span style=\"background:#ffffff\;color:#000000" >✪魔光✪</span>',
-        'Mystic':'神秘的',
-        'Charged':'<span style=\"color:red\" >充能的</span>',
-        'Amber':'<span style=\"background:#ffff00\;color:#9f9f16" >琥珀的（雷抗）</span>',
-        'Mithril':'<span style=\"color:red\" >秘银的</span>',
-        'Agile':'俊敏的',
-        'Zircon':'<span style=\"background:#ffffff\;color:#5c5a5a" >锆石的（圣抗）</span>',
-        'Frugal':'<span style=\"color:red\" >节能</span>',
-        'Jade':'<span style=\"background:#b1f9b1\" >翡翠的（风抗）</span>',
-        'Cobalt':'<span style=\"background:#a0f4f4\" >钴石的（冰抗）</span>',
-        'Ruby':'<span style=\"background:#ffa6a6\" >红宝石（火抗）</span>',
-        'Onyx':'<span style=\"background:#cccccc\" >缟玛瑙（暗抗）</span>',
-        'Savage':'<span style=\"color:red\" >野蛮的</span>',
-        'Reinforced':'加固的',
-        'Shielding':'盾化的',
+        'Radiant':'<span style=\"background:#ffffff\;color:#000000" >✪魔光的✪(法伤)</span>',
+        'Mystic':'神秘的(法暴伤)',
+        'Charged':'<span style=\"color:red\" >充能的(法速)</span>',
+        'Amber':'<span style=\"background:#ffff00\;color:#9f9f16" >琥珀的(电抗)</span>',
+        'Mithril':'<span style=\"color:red\" >秘银的(低重)</span>',
+        'Agile':'俊敏的(攻速)',
+        'Zircon':'<span style=\"background:#ffffff\;color:#5c5a5a" >锆石的(圣抗)</span>',
+        'Frugal':'<span style=\"color:red\" >节能的(省魔)</span>',
+        'Jade':'<span style=\"background:#b1f9b1\" >翡翠的(风抗)</span>',
+        'Cobalt':'<span style=\"background:#a0f4f4\" >钴石的(冰抗)</span>',
+        'Ruby':'<span style=\"background:#ffa6a6\" >红宝石(火抗)</span>',
+        'Onyx':'<span style=\"background:#cccccc\" >缟玛瑙(暗抗)</span>',
+        'Savage':'<span style=\"color:red\" >残暴的(攻暴伤)</span>',
+        'Reinforced':'加固的(减伤)',
+        'Shielding':'盾化的(格挡)',
         'Arctic':'<span style=\"background:#94c2f5\" >极寒之</span>',
         'Fiery':'<span style=\"background:#f97c7c\" >灼热之</span>',
         'Shocking':'<span style=\"background:#f4f375\" >闪电之</span>',
@@ -1293,7 +1380,7 @@ function loadEquips(){
         'Quintessential' : '第五元素',
 
         /////////////////品质//////////
-        'Flimsy ' : '薄弱 ',
+        'Flimsy ' : '<span style=\"background:#848482\" >薄弱</span> ',
         'Crude ':'<span style=\"background:#acacac\" >劣质</span> ',
         'Fair ':'<span style=\"background:#c1c1c1\" >一般</span> ',
         'Average ':'<span style=\"background:#dfdfdf\" >中等</span> ',
