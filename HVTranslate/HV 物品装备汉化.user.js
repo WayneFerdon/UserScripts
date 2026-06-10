@@ -65,7 +65,7 @@ function main(){
     translateOnChange('#popup_box');
     translateOnChange('.hvut-lt-div');
     translateOnChange('#hvut-bt-div', translateItems);
-    translateOnLoaded('.hvut-bt-Equip', '...');
+    translateOnLoaded('.hvut-bt-equip', '...');
 
     var location;
     for(location = 0; location < lklist.length; location++){
