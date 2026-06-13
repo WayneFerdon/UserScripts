@@ -15,24 +15,21 @@
 // @include      *://forums.e-hentai.org/*showtopic=*
 // @include      *://hvmarket.xyz/*
 // @include      *://reasoningtheory.net/*
-// @version      2026.06.10
+// @version      2026.06.10.1
 // @run-at         document-end
 // ==/UserScript==
 
 if (document.location.href.match(/ss=iw/)&&!document.getElementById('item_pane'))return
 if (document.getElementById('riddlemaster')||document.getElementById('textlog')) return;
-
+function pauseAsync(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 // 切换原文使用的变量
 var translatedList = new Map(), translated = true, changer;
 var tagsWhitelist = ['TEXTAREA','SCRIPT','STYLE'],
     rIsRegexp = /^\/(.+)\/([gim]+)?$/;
 //执行查找的xpath表达式，查找目标元素下的所有文本
 var pathExpre = new XPathEvaluator().createExpression('.//text()[ normalize-space(.) != "" ]', null);
-const delayEquipPopup = false;
-if (delayEquipPopup && document.location.href.match(/\/equip\//)) { // isEquPop
-    setTimeout(main, 5000);
-    return;
-}
 
 // 物品字典、装备字典、装备属性字典、额外内容字典，提供给translate方法第二参数做翻译字典
 // 可以调用对应translateItems/translateEquips/translateEquipsInfo/translateExtra方法直接翻译页面元素
@@ -196,7 +193,10 @@ function main(){
             break;
 
         case 13: //装备属性页
-            translateEquips('.showequip');//装备名
+                    translateOnChange('#equipselect_right', ()=>{
+              translateOnLoaded('.showequip', 'hv-quality-compare',undefined,undefined,true);
+            });
+            // translateEquips('.showequip');//装备名
             break;
 
         case 14: //hvmarket
@@ -248,6 +248,9 @@ function main(){
             break;
 
         case 17: //武器
+            translateOnChange('#equipselect_right', ()=>{
+              translateOnLoaded('.showequip', 'hv-quality-compare',undefined,undefined,true);
+            });
             translateOnLoaded('#equiplist', '...');
             translateEquipsList();
             break;
@@ -320,12 +323,10 @@ function translateText(elem, dict, dynamic) {
     }
   }
 }
-function pauseAsync(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-async function translateOnLoaded(selector, loadingText, method = undefined, selectorTrans = undefined) {
+
+async function translateOnLoaded(selector, loadingText = '...', method = undefined, selectorTrans = undefined, invertLoadingText=false) {
     if (Array.isArray(method)) {
-      method.forEach(m=>translateOnLoaded(selector, loadingText, m, selectorTrans));
+      method.forEach(m=>translateOnLoaded(selector, loadingText, m, selectorTrans, invertLoadingText));
       return;
     }
     method = method ?? translateEquips;
@@ -333,33 +334,21 @@ async function translateOnLoaded(selector, loadingText, method = undefined, sele
         //查找页面元素并调用翻译
         let done = false;
         while (!done) {
-            await pauseAsync(200);
+            await pauseAsync(0);
             done = true;
             const all = document.querySelectorAll(selector);
             if (!all) return;
             for (const item of all) {
-                if (!item.innerHTML.includes(loadingText)) continue;
+                if (invertLoadingText ^ !item.innerHTML.includes(loadingText)) continue;
                 done = false;
-                break;
+              break;
             }
         }
         method(selectorTrans ?? selector);
         return;
     }
-    // Type 2 : 通过一段时间没有变化判断
-    let timeout = setTimeout(()=>method(selector), 2000);
-    const observer = new MutationObserver((mutations, observer) => {
-        if (!translated) return;
-        mutations.forEach(mutation => {
-            if (timeout) {
-                clearTimeout(timeout);
-            }
-            timeout = setTimeout(()=>method(selector), 2000);
-        });
-    });
-    Array.from(document.querySelectorAll(selector)).forEach(elem => observer.observe(elem, { subtree: true, childList: true, attribute: true, attributeFilter: ['value', 'title'] })); //监听翻译动态内容
 }
-function translateOnChange(selector, method = undefined, translateSelector = undefined) {
+function translateOnChange(selector, method = undefined, translateSelector = undefined, doInInit=true) {
     if (Array.isArray(method)) {
       method.forEach(m=>translateOnChange(selector, m, translateSelector));
       return;
@@ -378,7 +367,7 @@ function translateOnChange(selector, method = undefined, translateSelector = und
             })
         });
     });
-    method(translateSelector);
+    if (doInInit) method(translateSelector);
     Array.from(document.querySelectorAll(selector)).forEach(elem => observer.observe(elem, { subtree: true, childList: true, attribute: true, attributeFilter: ['value', 'title'] })); //监听翻译动态内容
 }
 
@@ -603,6 +592,9 @@ function loadItems(){
         'Blood Token' : '鲜血令牌',
         'Token of Blood' : '鲜血令牌',
         'Chaos Token' : '混沌令牌',
+
+        'Pouches': '护符带',
+        'Charms': '护符',
 
         "Silk Charm Pouch": "丝绸护符袋",
         "Kevlar Charm Pouch": "凯夫拉护符袋",
