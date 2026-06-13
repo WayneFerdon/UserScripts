@@ -15,6 +15,7 @@
 // @grant none
 // @run-at         document-end
 // ==/UserScript==
+
 (function () {
     'use strict';
     //if (document.getElementById('pane_log')) return;
@@ -29,7 +30,7 @@
         '#messagebox_outer' : ['messagebox', 'items', 'equipsName', 'equipsInfo'], //HV内的系统消息浮窗，所有页面的系统信息提示翻译均在这部分
         'body>script[src$="hvc.js"]+div[style]:not([id])' : ['login'], //登陆页面，因为没有ID特征比较难搞
         '#navbar' : ['menu', 'difficulty'], //主菜单导航栏，使用菜单字典和难度名字典
-        '#equipselect_left' : ['character', 'equipsName', 'equipsPart'], //选择装备页面
+        '#equipselect_left' : ['character', /*'equipsName', 'equipsPart'*/], //选择装备页面
         '#eqch_left' : ['character', 'equipsName', 'equipsPart'], //主界面和切换装备页左侧栏，使用主界面字典和装备字典
         '#compare_pane' : ['equipsInfo'], //切换装备页面的装备对比悬浮窗，使用装备信息字典。
         '#equipcompare' : ['character'], //切换装备页面的装备对比悬浮窗，使用装备信息字典。
@@ -42,8 +43,8 @@
         '#armory_left' : ['filters'], //装备页的左侧筛选栏
         '#item_outer' : ['items', 'artifact'], //物品仓库
         '#eqinv_outer' : ['equipsName'], //装备仓库
-        '#equiplist' : ['armory', 'equipsName'], //装备仓库
-        '#equipinfo' : [true, 'armory', 'equipsName','equipsInfo'], //装备仓库右侧信息，需要监听动态翻译
+        '#equiplist' : ['armory', /*'equipsName'*/], //装备仓库
+        '#equipinfo' : [true, 'armory', /*'equipsName'*/,'equipsInfo'], //装备仓库右侧信息，需要监听动态翻译
         '#eqstats' : [true, 'equipsInfo'], //强化装备信息，需要监听动态翻译
         '#equipcount' : [true, 'armory'],//装备仓库已选择标签，需要动态翻译
         '#equipaction' : ['armory'], //装备库的操作按钮区域
@@ -81,8 +82,8 @@
         '#forge_outer>#rightpane' : ['upgrades', 'items', 'equipsInfo'], //装备强化的右侧栏，包含强化、物品、装备信息
         '#forge_cost_div' : [true, 'upgrades', 'items'], //装备修复、拆解、魂绑、重铸右侧的动态提示文本，需要监听动态翻译
         '#equip_extended' : ['equipsInfo'], //强化、装备独立信息页的装备信息
-        '.showequip' : ['equipsInfo','equipsName', 'equipsSuffix'], //装备独立信息页的装备信息
-        '#equipcompare' : ['equipsInfo','equipsName', 'equipsSuffix'], //装备对比
+        '.showequip' : ['equipsInfo',/*'equipsName'*/, 'equipsSuffix'], //装备独立信息页的装备信息
+        '#equipcompare' : ['equipsInfo',/*'equipsName'*/, 'equipsSuffix'], //装备对比
         '#showequip' : ['equipsName', 'equipsSuffix'], //独立装备信息页，装备信息已经由上面翻译只需要翻译装备名和装备后缀补充
         '#arena_list' : ['battle', 'difficulty'], //AR/ROB战斗列表
         '#arena_tokens' : ['battle'], //ROB的底部令牌提示
@@ -3042,9 +3043,9 @@ var words = {
         'Decreases effective target evade/block by' : '降低目标的有效回避/格挡率',
         'Decreases effective target parry/resist by' : '降低目标的有效招架/抵抗率',
         'Increases monster health by' : '提升怪物的体力值',
-        'Increases monster parry by' : '强化怪物的招架率',
-        'Increases monster resist by' : '强化怪物的抵抗率',
-        'Increases monster evade by' : '强化怪物的回避率',
+        'Increases monster natural parry by' : '强化怪物的基础招架率',
+        'Increases monster natural resist by' : '强化怪物的基础抵抗率',
+        'Increases monster natural evade by' : '强化怪物的基础回避率',
         'Increases monster physical mitigation by' : '强化怪物的物理减伤',
         'Increases monster magical mitigation by' : '强化怪物的魔法减伤',
         'Increases monster attack speed by' : '增加怪物的攻击速度',
