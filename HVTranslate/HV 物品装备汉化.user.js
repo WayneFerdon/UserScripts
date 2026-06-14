@@ -361,7 +361,7 @@ function translateOnChange(selector, method = undefined, translateSelector = und
             const nodes = Array.from(mutation.addedNodes);
             nodes.push(mutation.target);
             nodes.forEach(node => {
-                if (!node instanceof Element) return;
+                if (!(node instanceof Element)) return;
                 method(translateSelector);
                 observer.observe(node, { subtree: true, childList: true, attribute: true, attributeFilter: ['value', 'title'] });
             })
