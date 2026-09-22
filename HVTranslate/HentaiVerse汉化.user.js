@@ -14,7 +14,7 @@
 // @include        *://alt.hentaiverse.org/*
 // @exclude        *://*hentaiverse.org/*/y/*
 // @exclude        *://*hentaiverse.org/*/z/*
-// @version        2026.06.08.3
+// @version        2026.06.08.4
 // @run-at         document-end
 // ==/UserScript==
 
