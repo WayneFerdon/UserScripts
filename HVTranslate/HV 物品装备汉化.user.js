@@ -1,13 +1,3 @@
-/*
- * @Author: WayneFerdon wayneferdon@hotmail.com
- * @Date: 2026-06-18 17:26:57
- * @LastEditors: WayneFerdon wayneferdon@hotmail.com
- * @LastEditTime: 2026-08-01 00:42:52
- * @FilePath: \UserScripts\HVTranslate\HV 物品装备汉化.user.js
- * ----------------------------------------------------------------
- * Licensed to the .NET Foundation under one or more agreements.
- * The .NET Foundation licenses this file to you under the MIT license.
- */
 // ==UserScript==
 // @name         HV 物品装备汉化
 // @namespace    hentaiverse.org
@@ -25,6 +15,8 @@
 // @exclude      *://*hentaiverse.org/*pages/showequip.php?*
 // @include      *://forums.e-hentai.org/*showtopic=*
 // @include      *://reasoningtheory.net/*
+// @exclude        *://*hentaiverse.org/*/y/*
+// @exclude        *://*hentaiverse.org/*/z/*
 // @version      2026.06.10.3
 // @run-at         document-end
 // ==/UserScript==
@@ -33,7 +25,7 @@ unsafeWindow.isEquipTranslateSeparately = true;
 
 if (document.location.href.match(/ss=iw/)&&!document.getElementById('item_pane'))return
 if (document.getElementById('riddlemaster')||document.getElementById('textlog')) return;
-function pauseAsync(ms) {
+function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 // 切换原文使用的变量
@@ -114,6 +106,7 @@ function main(){
             translateItems(".itemlist>tbody>tr>td>div");
             translateItems(".sa>div:last-child>div");
 
+            translateEquips('.accept_equip, #accept_equip p');
             translateOnChange('.hvut-ss-results', [translateItems, translateEquips]);
             translateOnChange('.hvut-ss-log', [translateItems, translateEquips]);
             break;
@@ -371,7 +364,7 @@ async function translateOnLoaded(selector, loadingText = '...', method = undefin
         //查找页面元素并调用翻译
         let done = false;
         while (!done) {
-            await pauseAsync(0);
+            await sleep(100);
             done = true;
             const all = document.querySelectorAll(selector);
             if (!all) return;
@@ -943,12 +936,18 @@ function loadItems(){
     return dictItems;
 };
 
-
 function loadEquips(){
     if (dictEquips) return dictEquips;
     //装备名
     var equips = {
         ///////////////////////////////////////////武器种类
+        '^One-Handed Weapon$':'单手武器',
+        '^Two-Handed Weapon$':'双手武器',
+        '^Shield$':'盾',
+        '^Cloth Armor$':'布甲',
+        '^Light Armor$':'轻甲',
+        '^Heavy Armor$':'重甲',
+
         // 单手武器类
         'Dagger':'匕首(单)',
         'Sword Chucks' : '*锁链双剑(单)',
