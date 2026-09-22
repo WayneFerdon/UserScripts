@@ -17,7 +17,7 @@
 // @include      *://reasoningtheory.net/*
 // @exclude        *://*hentaiverse.org/*/y/*
 // @exclude        *://*hentaiverse.org/*/z/*
-// @version      2026.06.10.3
+// @version      2026.06.10.4
 // @run-at         document-end
 // ==/UserScript==
 
