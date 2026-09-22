@@ -12,6 +12,8 @@
 // @notice         如与其它脚本共同运行冲突可尝试调整脚本运行顺序将汉化脚本放到最后，但无法保证完全兼容
 // @include        *://hentaiverse.org/*
 // @include        *://alt.hentaiverse.org/*
+// @exclude        *://*hentaiverse.org/*/y/*
+// @exclude        *://*hentaiverse.org/*/z/*
 // @version        2026.06.08.3
 // @run-at         document-end
 // ==/UserScript==
