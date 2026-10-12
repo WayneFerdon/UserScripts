@@ -272,6 +272,7 @@ function main(){
             break;
 
         case 17: //武器
+        translateOnChange('#equiplist', undefined, '#equipcount');
             translateOnChange('#equipselect_right', ()=>{
               translateOnLoaded('.showequip', 'hv-quality-compare',undefined,undefined,true);
             });
@@ -940,6 +941,15 @@ function loadEquips(){
     if (dictEquips) return dictEquips;
     //装备名
     var equips = {
+       "Selected ((\\d+) of (\\d+)) matching equipment": "已选择 $2 件符合条件的装备",
+        "(?<=已选择 \\d )of(?= \\d+ 件符合条件的装备)": "/",
+        "There are no available equipment of this type": "当前类别没有可选装备",
+        "available to purchase": "可供购买",
+        "available to sell": "可供出售",
+        "available to salvage": "可供拆解",
+        "available to soulbind": "可供绑定",
+        "available to organize": "可供整理",
+        "available to repair": "可供维修",
         ///////////////////////////////////////////武器种类
         '^One-Handed Weapon$':'单手武器',
         '^Two-Handed Weapon$':'双手武器',
