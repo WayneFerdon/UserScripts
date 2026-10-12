@@ -3711,7 +3711,7 @@ var words = unsafeWindow.words ??= {
 
 
     //战斗中切换翻译，与上面功能类似，但是更改的状态会持久性存储
-    window.translateBattle = !!localStorage.translateBattle;
+    window.translateBattle = !!(localStorage.translateBattle ?? 1);
     function changeBattleTranslate() {
         if (changer && document.body.contains(changer)) {
             if (translated) changer.click();
